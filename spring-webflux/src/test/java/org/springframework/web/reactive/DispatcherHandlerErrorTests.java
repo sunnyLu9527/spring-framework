@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.web.reactive;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -52,12 +51,9 @@ import org.springframework.web.server.handler.ExceptionHandlingWebHandler;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.junit.Assert.*;
+import static org.springframework.http.MediaType.*;
 
 /**
  * Test the effect of exceptions at different stages of request processing by
@@ -85,19 +81,15 @@ public class DispatcherHandlerErrorTests {
 	@Test
 	public void noHandler() {
 		MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/does-not-exist"));
-		Mono<Void> mono = this.dispatcherHandler.handle(exchange);
+		Mono<Void> publisher = this.dispatcherHandler.handle(exchange);
 
-		StepVerifier.create(mono)
-				.consumeErrorWith(ex -> {
-					assertThat(ex, instanceOf(ResponseStatusException.class));
-					assertThat(ex.getMessage(), is("404 NOT_FOUND \"No matching handler\""));
+		StepVerifier.create(publisher)
+				.consumeErrorWith(error -> {
+					assertThat(error, instanceOf(ResponseStatusException.class));
+					assertThat(error.getMessage(),
+							is("Response status 404 with reason \"No matching handler\""));
 				})
 				.verify();
-
-		// SPR-17475
-		AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
-		StepVerifier.create(mono).consumeErrorWith(exceptionRef::set).verify();
-		StepVerifier.create(mono).consumeErrorWith(ex -> assertNotSame(exceptionRef.get(), ex)).verify();
 	}
 
 	@Test

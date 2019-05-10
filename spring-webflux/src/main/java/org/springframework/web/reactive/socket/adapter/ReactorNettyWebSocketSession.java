@@ -15,6 +15,7 @@
  */
 package org.springframework.web.reactive.socket.adapter;
 
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;

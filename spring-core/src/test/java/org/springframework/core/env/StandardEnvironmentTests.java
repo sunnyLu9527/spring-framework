@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,22 +28,9 @@ import org.junit.Test;
 import org.springframework.core.SpringProperties;
 import org.springframework.mock.env.MockPropertySource;
 
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.springframework.core.env.AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME;
-import static org.springframework.core.env.AbstractEnvironment.DEFAULT_PROFILES_PROPERTY_NAME;
-import static org.springframework.core.env.AbstractEnvironment.RESERVED_DEFAULT_PROFILE_NAME;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.springframework.core.env.AbstractEnvironment.*;
 
 /**
  * Unit tests for {@link StandardEnvironment}.
@@ -338,15 +325,6 @@ public class StandardEnvironmentTests {
 	@Test(expected = IllegalArgumentException.class)
 	public void acceptsProfiles_withInvalidNotOperator() {
 		environment.acceptsProfiles("p1", "!");
-	}
-
-	@Test
-	public void acceptsProfiles_withProfileExpression() {
-		assertThat(environment.acceptsProfiles(Profiles.of("p1 & p2")), is(false));
-		environment.addActiveProfile("p1");
-		assertThat(environment.acceptsProfiles(Profiles.of("p1 & p2")), is(false));
-		environment.addActiveProfile("p2");
-		assertThat(environment.acceptsProfiles(Profiles.of("p1 & p2")), is(true));
 	}
 
 	@Test

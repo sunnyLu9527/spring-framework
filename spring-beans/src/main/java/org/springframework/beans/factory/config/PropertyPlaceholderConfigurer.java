@@ -32,6 +32,11 @@ import org.springframework.util.StringValueResolver;
  * {@link #setLocation local} {@link #setProperties properties} and/or system properties
  * and environment variables.
  *
+ * <p>As of Spring 3.1, {@link org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+ * PropertySourcesPlaceholderConfigurer} should be used preferentially over this implementation; it is
+ * more flexible through taking advantage of the {@link org.springframework.core.env.Environment} and
+ * {@link org.springframework.core.env.PropertySource} mechanisms also made available in Spring 3.1.
+ *
  * <p>{@link PropertyPlaceholderConfigurer} is still appropriate for use when:
  * <ul>
  * <li>the {@code spring-context} module is not available (i.e., one is using Spring's
@@ -49,11 +54,8 @@ import org.springframework.util.StringValueResolver;
  * @see #setSystemPropertiesModeName
  * @see PlaceholderConfigurerSupport
  * @see PropertyOverrideConfigurer
- * @deprecated as of 5.2; use {@code org.springframework.context.support.PropertySourcesPlaceholderConfigurer}
- * instead which is more flexible through taking advantage of the {@link org.springframework.core.env.Environment}
- * and {@link org.springframework.core.env.PropertySource} mechanisms.
+ * @see org.springframework.context.support.PropertySourcesPlaceholderConfigurer
  */
-@Deprecated
 public class PropertyPlaceholderConfigurer extends PlaceholderConfigurerSupport {
 
 	/** Never check system properties. */

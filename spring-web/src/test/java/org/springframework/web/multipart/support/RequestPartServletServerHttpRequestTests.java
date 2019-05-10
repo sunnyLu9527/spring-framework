@@ -32,9 +32,7 @@ import org.springframework.mock.web.test.MockMultipartHttpServletRequest;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Rossen Stoyanchev
@@ -59,7 +57,7 @@ public class RequestPartServletServerHttpRequestTests {
 		ServerHttpRequest request = new RequestPartServletServerHttpRequest(this.mockRequest, "part");
 
 		URI uri = new URI("https://example.com/path?query");
-		this.mockRequest.setScheme(uri.getScheme());
+		this.mockRequest.setScheme("https");
 		this.mockRequest.setServerName(uri.getHost());
 		this.mockRequest.setServerPort(uri.getPort());
 		this.mockRequest.setRequestURI(uri.getPath());

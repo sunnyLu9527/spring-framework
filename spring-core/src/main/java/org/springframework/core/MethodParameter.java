@@ -70,7 +70,7 @@ public class MethodParameter {
 
 	private int nestingLevel = 1;
 
-	/** Map from Integer level to Integer type index. */
+	/** Map from Integer level to Integer type index */
 	@Nullable
 	Map<Integer, Integer> typeIndexesPerLevel;
 
@@ -228,9 +228,6 @@ public class MethodParameter {
 	 * @since 5.0
 	 */
 	public Parameter getParameter() {
-		if (this.parameterIndex < 0) {
-			throw new IllegalStateException("Cannot retrieve Parameter descriptor for method return type");
-		}
 		Parameter parameter = this.parameter;
 		if (parameter == null) {
 			parameter = getExecutable().getParameters()[this.parameterIndex];
@@ -343,9 +340,7 @@ public class MethodParameter {
 	 */
 	public boolean isOptional() {
 		return (getParameterType() == Optional.class || hasNullableAnnotation() ||
-				(KotlinDetector.isKotlinReflectPresent() &&
-						KotlinDetector.isKotlinType(getContainingClass()) &&
-						KotlinDelegate.isOptional(this)));
+				(KotlinDetector.isKotlinType(getContainingClass()) && KotlinDelegate.isOptional(this)));
 	}
 
 	/**
@@ -402,9 +397,7 @@ public class MethodParameter {
 		if (paramType == null) {
 			if (this.parameterIndex < 0) {
 				Method method = getMethod();
-				paramType = (method != null ?
-						(KotlinDetector.isKotlinReflectPresent() && KotlinDetector.isKotlinType(getContainingClass()) ?
-						KotlinDelegate.getReturnType(method) : method.getReturnType()) : void.class);
+				paramType = (method != null ? method.getReturnType() : void.class);
 			}
 			else {
 				paramType = this.executable.getParameterTypes()[this.parameterIndex];
@@ -424,9 +417,7 @@ public class MethodParameter {
 		if (paramType == null) {
 			if (this.parameterIndex < 0) {
 				Method method = getMethod();
-				paramType = (method != null ?
-						(KotlinDetector.isKotlinReflectPresent() && KotlinDetector.isKotlinType(getContainingClass()) ?
-						KotlinDelegate.getGenericReturnType(method) : method.getGenericReturnType()) : void.class);
+				paramType = (method != null ? method.getGenericReturnType() : void.class);
 			}
 			else {
 				Type[] genericParameterTypes = this.executable.getGenericParameterTypes();
@@ -607,9 +598,6 @@ public class MethodParameter {
 	 */
 	@Nullable
 	public String getParameterName() {
-		if (this.parameterIndex < 0) {
-			return null;
-		}
 		ParameterNameDiscoverer discoverer = this.parameterNameDiscoverer;
 		if (discoverer != null) {
 			String[] parameterNames = null;
@@ -756,8 +744,7 @@ public class MethodParameter {
 
 	private static int validateIndex(Executable executable, int parameterIndex) {
 		int count = executable.getParameterCount();
-		Assert.isTrue(parameterIndex >= -1 && parameterIndex < count,
-				() -> "Parameter index needs to be between -1 and " + (count - 1));
+		Assert.isTrue(parameterIndex < count, () -> "Parameter index needs to be between -1 and " + (count - 1));
 		return parameterIndex;
 	}
 
@@ -803,32 +790,6 @@ public class MethodParameter {
 			}
 			return false;
 		}
-
-		/**
-		 * Return the generic return type of the method, with support of suspending
-		 * functions via Kotlin reflection.
-		 */
-		static private Type getGenericReturnType(Method method) {
-			KFunction<?> function = ReflectJvmMapping.getKotlinFunction(method);
-			if (function != null && function.isSuspend()) {
-				return ReflectJvmMapping.getJavaType(function.getReturnType());
-			}
-			return method.getGenericReturnType();
-		}
-
-		/**
-		 * Return the return type of the method, with support of suspending
-		 * functions via Kotlin reflection.
-		 */
-		static private Class<?> getReturnType(Method method) {
-			KFunction<?> function = ReflectJvmMapping.getKotlinFunction(method);
-			if (function != null && function.isSuspend()) {
-				Type paramType = ReflectJvmMapping.getJavaType(function.getReturnType());
-				Class<?> paramClass = ResolvableType.forType(paramType).resolve();
-				Assert.notNull(paramClass, "Type " + paramType + "can't be resolved to a class");
-				return paramClass;
-			}
-			return method.getReturnType();
-		}
 	}
+
 }

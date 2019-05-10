@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -108,8 +107,7 @@ public abstract class StringUtils {
 	 * </pre>
 	 * @param str the {@code CharSequence} to check (may be {@code null})
 	 * @return {@code true} if the {@code CharSequence} is not {@code null} and has length
-	 * @see #hasLength(String)
-	 * @see #hasText(CharSequence)
+	 * @see #hasText(String)
 	 */
 	public static boolean hasLength(@Nullable CharSequence str) {
 		return (str != null && str.length() > 0);
@@ -649,11 +647,6 @@ public abstract class StringUtils {
 		}
 		String pathToUse = replace(path, WINDOWS_FOLDER_SEPARATOR, FOLDER_SEPARATOR);
 
-		// Shortcut if there is no work to do
-		if (pathToUse.indexOf('.') == -1) {
-			return pathToUse;
-		}
-
 		// Strip prefix from path to analyze, to not treat it as part of the
 		// first path element. This is necessary to correctly parse paths like
 		// "file:core/../core/io/Resource.class", where the ".." should just
@@ -788,7 +781,6 @@ public abstract class StringUtils {
 	public static Locale parseLocale(String localeValue) {
 		String[] tokens = tokenizeLocaleSource(localeValue);
 		if (tokens.length == 1) {
-			validateLocalePart(localeValue);
 			Locale resolved = Locale.forLanguageTag(localeValue);
 			if (resolved.getLanguage().length() > 0) {
 				return resolved;
@@ -850,7 +842,7 @@ public abstract class StringUtils {
 	private static void validateLocalePart(String localePart) {
 		for (int i = 0; i < localePart.length(); i++) {
 			char ch = localePart.charAt(i);
-			if (ch != ' ' && ch != '_' && ch != '-' && ch != '#' && !Character.isLetterOrDigit(ch)) {
+			if (ch != ' ' && ch != '_' && ch != '#' && !Character.isLetterOrDigit(ch)) {
 				throw new IllegalArgumentException(
 						"Locale part \"" + localePart + "\" contains invalid characters");
 			}
@@ -976,7 +968,8 @@ public abstract class StringUtils {
 			return array1;
 		}
 
-		List<String> result = new ArrayList<>(Arrays.asList(array1));
+		List<String> result = new ArrayList<>();
+		result.addAll(Arrays.asList(array1));
 		for (String str : array2) {
 			if (!result.contains(str)) {
 				result.add(str);
@@ -992,7 +985,7 @@ public abstract class StringUtils {
 	 */
 	public static String[] sortStringArray(String[] array) {
 		if (ObjectUtils.isEmpty(array)) {
-			return array;
+			return new String[0];
 		}
 
 		Arrays.sort(array);
@@ -1005,9 +998,9 @@ public abstract class StringUtils {
 	 * @param array the original {@code String} array (potentially empty)
 	 * @return the resulting array (of the same size) with trimmed elements
 	 */
-	public static String[] trimArrayElements(String[] array) {
+	public static String[] trimArrayElements(@Nullable String[] array) {
 		if (ObjectUtils.isEmpty(array)) {
-			return array;
+			return new String[0];
 		}
 
 		String[] result = new String[array.length];
@@ -1317,11 +1310,14 @@ public abstract class StringUtils {
 			return ObjectUtils.nullSafeToString(arr[0]);
 		}
 
-		StringJoiner sj = new StringJoiner(delim);
-		for (Object o : arr) {
-			sj.add(String.valueOf(o));
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < arr.length; i++) {
+			if (i > 0) {
+				sb.append(delim);
+			}
+			sb.append(arr[i]);
 		}
-		return sj.toString();
+		return sb.toString();
 	}
 
 	/**

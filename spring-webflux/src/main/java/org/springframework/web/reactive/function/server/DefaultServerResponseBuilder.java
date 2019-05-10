@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -35,7 +34,6 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.codec.Hints;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -74,16 +72,9 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 	public DefaultServerResponseBuilder(ServerResponse other) {
 		Assert.notNull(other, "ServerResponse must not be null");
+		this.statusCode = (other instanceof AbstractServerResponse ?
+				((AbstractServerResponse) other).statusCode : other.statusCode().value());
 		this.headers.addAll(other.headers());
-		this.cookies.addAll(other.cookies());
-		if (other instanceof AbstractServerResponse) {
-			AbstractServerResponse abstractOther = (AbstractServerResponse) other;
-			this.statusCode = abstractOther.statusCode;
-			this.hints.putAll(abstractOther.hints);
-		}
-		else {
-			this.statusCode = other.statusCode().value();
-		}
 	}
 
 	public DefaultServerResponseBuilder(HttpStatus status) {
@@ -166,20 +157,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 	}
 
 	@Override
-	public ServerResponse.BodyBuilder hints(Consumer<Map<String, Object>> hintsConsumer) {
-		hintsConsumer.accept(this.hints);
-		return this;
-	}
-
-	@Override
 	public ServerResponse.BodyBuilder lastModified(ZonedDateTime lastModified) {
-		this.headers.setLastModified(lastModified);
-		return this;
-	}
-
-	@Override
-	public ServerResponse.BodyBuilder lastModified(Instant lastModified) {
-		this.headers.setLastModified(lastModified);
+		this.headers.setZonedDateTime(HttpHeaders.LAST_MODIFIED, lastModified);
 		return this;
 	}
 
@@ -191,7 +170,10 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 	@Override
 	public ServerResponse.BodyBuilder cacheControl(CacheControl cacheControl) {
-		this.headers.setCacheControl(cacheControl);
+		String ccValue = cacheControl.getHeaderValue();
+		if (ccValue != null) {
+			this.headers.setCacheControl(ccValue);
+		}
 		return this;
 	}
 
@@ -228,10 +210,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 		return new DefaultEntityResponseBuilder<>(publisher,
 				BodyInserters.fromPublisher(publisher, elementClass))
-				.status(this.statusCode)
 				.headers(this.headers)
-				.cookies(cookies -> cookies.addAll(this.cookies))
-				.hints(hints -> hints.putAll(this.hints))
+				.status(this.statusCode)
 				.build()
 				.map(entityResponse -> entityResponse);
 	}
@@ -245,10 +225,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 		return new DefaultEntityResponseBuilder<>(publisher,
 				BodyInserters.fromPublisher(publisher, typeReference))
-				.status(this.statusCode)
 				.headers(this.headers)
-				.cookies(cookies -> cookies.addAll(this.cookies))
-				.hints(hints -> hints.putAll(this.hints))
+				.status(this.statusCode)
 				.build()
 				.map(entityResponse -> entityResponse);
 	}
@@ -261,10 +239,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 		return new DefaultEntityResponseBuilder<>(body,
 				BodyInserters.fromObject(body))
-				.status(this.statusCode)
 				.headers(this.headers)
-				.cookies(cookies -> cookies.addAll(this.cookies))
-				.hints(hints -> hints.putAll(this.hints))
+				.status(this.statusCode)
 				.build()
 				.map(entityResponse -> entityResponse);
 	}
@@ -278,9 +254,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 	@Override
 	public Mono<ServerResponse> render(String name, Object... modelAttributes) {
 		return new DefaultRenderingResponseBuilder(name)
-				.status(this.statusCode)
 				.headers(this.headers)
-				.cookies(cookies -> cookies.addAll(this.cookies))
+				.status(this.statusCode)
 				.modelAttributes(modelAttributes)
 				.build()
 				.map(renderingResponse -> renderingResponse);
@@ -289,9 +264,8 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 	@Override
 	public Mono<ServerResponse> render(String name, Map<String, ?> model) {
 		return new DefaultRenderingResponseBuilder(name)
-				.status(this.statusCode)
 				.headers(this.headers)
-				.cookies(cookies -> cookies.addAll(this.cookies))
+				.status(this.statusCode)
 				.modelAttributes(model)
 				.build()
 				.map(renderingResponse -> renderingResponse);
@@ -311,17 +285,12 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 		private final MultiValueMap<String, ResponseCookie> cookies;
 
-		final Map<String, Object> hints;
-
-
 		protected AbstractServerResponse(
-				int statusCode, HttpHeaders headers, MultiValueMap<String, ResponseCookie> cookies,
-				Map<String, Object> hints) {
+				int statusCode, HttpHeaders headers, MultiValueMap<String, ResponseCookie> cookies) {
 
 			this.statusCode = statusCode;
 			this.headers = HttpHeaders.readOnlyHttpHeaders(headers);
 			this.cookies = CollectionUtils.unmodifiableMultiValueMap(new LinkedMultiValueMap<>(cookies));
-			this.hints = hints;
 		}
 
 		@Override
@@ -342,6 +311,7 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 		@Override
 		public final Mono<Void> writeTo(ServerWebExchange exchange, Context context) {
 			writeStatusAndHeaders(exchange.getResponse());
+
 			Instant lastModified = Instant.ofEpochMilli(headers().getLastModified());
 			HttpMethod httpMethod = exchange.getRequest().getMethod();
 			if (SAFE_METHODS.contains(httpMethod) && exchange.checkNotModified(headers().getETag(), lastModified)) {
@@ -388,7 +358,7 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 				MultiValueMap<String, ResponseCookie> cookies,
 				BiFunction<ServerWebExchange, Context, Mono<Void>> writeFunction) {
 
-			super(statusCode, headers, cookies, Collections.emptyMap());
+			super(statusCode, headers, cookies);
 			Assert.notNull(writeFunction, "BiFunction must not be null");
 			this.writeFunction = writeFunction;
 		}
@@ -404,14 +374,16 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 
 		private final BodyInserter<T, ? super ServerHttpResponse> inserter;
 
+		private final Map<String, Object> hints;
 
 		public BodyInserterResponse(int statusCode, HttpHeaders headers,
 				MultiValueMap<String, ResponseCookie> cookies,
 				BodyInserter<T, ? super ServerHttpResponse> body, Map<String, Object> hints) {
 
-			super(statusCode, headers, cookies, hints);
+			super(statusCode, headers, cookies);
 			Assert.notNull(body, "BodyInserter must not be null");
 			this.inserter = body;
+			this.hints = hints;
 		}
 
 		@Override
@@ -427,7 +399,6 @@ class DefaultServerResponseBuilder implements ServerResponse.BodyBuilder {
 				}
 				@Override
 				public Map<String, Object> hints() {
-					hints.put(Hints.LOG_PREFIX_HINT, exchange.getLogPrefix());
 					return hints;
 				}
 			});

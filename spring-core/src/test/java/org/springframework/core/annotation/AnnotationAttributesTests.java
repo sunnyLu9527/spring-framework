@@ -21,18 +21,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import org.springframework.core.annotation.AnnotationUtilsTests.ImplicitAliasesContextConfig;
 
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link AnnotationAttributes}.
@@ -45,6 +41,9 @@ import static org.junit.Assert.assertTrue;
 public class AnnotationAttributesTests {
 
 	private AnnotationAttributes attributes = new AnnotationAttributes();
+
+	@Rule
+	public final ExpectedException exception = ExpectedException.none();
 
 
 	@Test
@@ -80,9 +79,9 @@ public class AnnotationAttributesTests {
 	@Test
 	public void unresolvableClass() throws Exception {
 		attributes.put("unresolvableClass", new ClassNotFoundException("myclass"));
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				attributes.getClass("unresolvableClass"))
-			.withMessageContaining("myclass");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage(containsString("myclass"));
+		attributes.getClass("unresolvableClass");
 	}
 
 	@Test
@@ -132,31 +131,31 @@ public class AnnotationAttributesTests {
 
 	@Test
 	public void getEnumWithNullAttributeName() {
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				attributes.getEnum(null))
-			.withMessageContaining("must not be null or empty");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("must not be null or empty");
+		attributes.getEnum(null);
 	}
 
 	@Test
 	public void getEnumWithEmptyAttributeName() {
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				attributes.getEnum(""))
-			.withMessageContaining("must not be null or empty");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("must not be null or empty");
+		attributes.getEnum("");
 	}
 
 	@Test
 	public void getEnumWithUnknownAttributeName() {
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				attributes.getEnum("bogus"))
-			.withMessageContaining("Attribute 'bogus' not found");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("Attribute 'bogus' not found");
+		attributes.getEnum("bogus");
 	}
 
 	@Test
 	public void getEnumWithTypeMismatch() {
 		attributes.put("color", "RED");
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				attributes.getEnum("color"))
-			.withMessageContaining("Attribute 'color' is of type String, but Enum was expected");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage(containsString("Attribute 'color' is of type String, but Enum was expected"));
+		attributes.getEnum("color");
 	}
 
 	@Test

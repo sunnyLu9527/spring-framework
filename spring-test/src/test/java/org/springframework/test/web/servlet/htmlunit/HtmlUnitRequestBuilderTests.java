@@ -178,7 +178,7 @@ public class HtmlUnitRequestBuilderTests {
 
 	@Test
 	public void buildRequestContextPathUsesNoFirstSegmentWithDefault() throws MalformedURLException {
-		webRequest.setUrl(new URL("http://example.com/"));
+		webRequest.setUrl(new URL("https://example.com/"));
 		String contextPath = requestBuilder.buildRequest(servletContext).getContextPath();
 
 		assertThat(contextPath, equalTo(""));

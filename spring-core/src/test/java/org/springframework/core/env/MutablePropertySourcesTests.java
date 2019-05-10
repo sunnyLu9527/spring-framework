@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,12 @@
 
 package org.springframework.core.env;
 
-import java.util.Iterator;
-
 import org.junit.Test;
 
 import org.springframework.mock.env.MockPropertySource;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Chris Beams
@@ -162,50 +151,6 @@ public class MutablePropertySourcesTests {
 	public void getNonExistentPropertySourceReturnsNull() {
 		MutablePropertySources sources = new MutablePropertySources();
 		assertThat(sources.get("bogus"), nullValue());
-	}
-
-	@Test
-	public void iteratorContainsPropertySource() {
-		MutablePropertySources sources = new MutablePropertySources();
-		sources.addLast(new MockPropertySource("test"));
-
-		Iterator<PropertySource<?>> it = sources.iterator();
-		assertTrue(it.hasNext());
-		assertEquals("test", it.next().getName());
-
-		try {
-			it.remove();
-			fail("Should have thrown UnsupportedOperationException");
-		}
-		catch (UnsupportedOperationException ex) {
-			// expected
-		}
-		assertFalse(it.hasNext());
-	}
-
-	@Test
-	public void iteratorIsEmptyForEmptySources() {
-		MutablePropertySources sources = new MutablePropertySources();
-		Iterator<PropertySource<?>> it = sources.iterator();
-		assertFalse(it.hasNext());
-	}
-
-	@Test
-	public void streamContainsPropertySource() {
-		MutablePropertySources sources = new MutablePropertySources();
-		sources.addLast(new MockPropertySource("test"));
-
-		assertThat(sources.stream(), notNullValue());
-		assertThat(sources.stream().count(), is(1L));
-		assertThat(sources.stream().anyMatch(source -> "test".equals(source.getName())), is(true));
-		assertThat(sources.stream().anyMatch(source -> "bogus".equals(source.getName())), is(false));
-	}
-
-	@Test
-	public void streamIsEmptyForEmptySources() {
-		MutablePropertySources sources = new MutablePropertySources();
-		assertThat(sources.stream(), notNullValue());
-		assertThat(sources.stream().count(), is(0L));
 	}
 
 }

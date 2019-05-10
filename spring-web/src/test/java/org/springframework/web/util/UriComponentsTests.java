@@ -24,14 +24,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.springframework.web.util.UriComponents.UriTemplateVariables;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 
 /**
@@ -131,15 +135,6 @@ public class UriComponentsTests {
 	public void uirTemplateExpandWithMismatchedCurlyBraces() {
 		assertEquals("/myurl/?q=%7B%7B%7B%7B",
 				UriComponentsBuilder.fromUriString("/myurl/?q={{{{").encode().build().toUriString());
-	}
-
-	@Test // gh-22447
-	public void expandWithFragmentOrder() {
-		UriComponents uriComponents = UriComponentsBuilder
-				.fromUriString("https://{host}/{path}#{fragment}").build()
-				.expand("example.com", "foo", "bar");
-
-		assertEquals("https://example.com/foo#bar", uriComponents.toUriString());
 	}
 
 	@Test // SPR-12123

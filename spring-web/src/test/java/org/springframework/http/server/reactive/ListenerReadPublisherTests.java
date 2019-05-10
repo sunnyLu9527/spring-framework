@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.reactivestreams.Subscription;
 
 import org.springframework.core.io.buffer.DataBuffer;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link AbstractListenerReadPublisher}.
@@ -82,11 +82,6 @@ public class ListenerReadPublisherTests {
 		private int readCalls = 0;
 
 		private int discardCalls = 0;
-
-
-		public TestListenerReadPublisher() {
-			super("");
-		}
 
 
 		public int getReadCalls() {

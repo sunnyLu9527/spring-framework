@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,28 +25,15 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation6.ComponentForScanning;
 import org.springframework.context.annotation6.ConfigForScanning;
 import org.springframework.context.annotation6.Jsr330NamedForScanning;
-import org.springframework.core.ResolvableType;
-import org.springframework.util.ObjectUtils;
 
-import static java.lang.String.format;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.springframework.util.StringUtils.uncapitalize;
+import static java.lang.String.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.springframework.util.StringUtils.*;
 
 /**
  * @author Chris Beams
@@ -286,22 +273,6 @@ public class AnnotationConfigApplicationContextTests {
 	}
 
 	@Test
-	public void individualBeanWithNullReturningSupplier() {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.registerBean("a", BeanA.class, () -> null);
-		context.registerBean("b", BeanB.class, BeanB::new);
-		context.registerBean("c", BeanC.class, BeanC::new);
-		context.refresh();
-
-		assertTrue(ObjectUtils.containsElement(context.getBeanNamesForType(BeanA.class), "a"));
-		assertTrue(ObjectUtils.containsElement(context.getBeanNamesForType(BeanB.class), "b"));
-		assertTrue(ObjectUtils.containsElement(context.getBeanNamesForType(BeanC.class), "c"));
-		assertTrue(context.getBeansOfType(BeanA.class).isEmpty());
-		assertSame(context.getBean(BeanB.class), context.getBeansOfType(BeanB.class).values().iterator().next());
-		assertSame(context.getBean(BeanC.class), context.getBeansOfType(BeanC.class).values().iterator().next());
-	}
-
-	@Test
 	public void individualBeanWithSpecifiedConstructorArguments() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 		BeanB b = new BeanB();
@@ -351,30 +322,6 @@ public class AnnotationConfigApplicationContextTests {
 		assertSame(context.getBean("b", BeanB.class), context.getBean("a", BeanA.class).b);
 		assertSame(c, context.getBean("a", BeanA.class).c);
 		assertSame(context, context.getBean("b", BeanB.class).applicationContext);
-	}
-
-	@Test
-	public void individualBeanWithFactoryBeanSupplier() {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.registerBean("fb", TypedFactoryBean.class, TypedFactoryBean::new, bd -> bd.setLazyInit(true));
-		context.refresh();
-
-		assertEquals(String.class, context.getType("fb"));
-		assertEquals(TypedFactoryBean.class, context.getType("&fb"));
-	}
-
-	@Test
-	public void individualBeanWithFactoryBeanSupplierAndTargetType() {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		RootBeanDefinition bd = new RootBeanDefinition();
-		bd.setInstanceSupplier(TypedFactoryBean::new);
-		bd.setTargetType(ResolvableType.forClassWithGenerics(FactoryBean.class, String.class));
-		bd.setLazyInit(true);
-		context.registerBeanDefinition("fb", bd);
-		context.refresh();
-
-		assertEquals(String.class, context.getType("fb"));
-		assertEquals(FactoryBean.class, context.getType("&fb"));
 	}
 
 
@@ -449,28 +396,6 @@ public class AnnotationConfigApplicationContextTests {
 	}
 
 	static class BeanC {}
-
-	static class TypedFactoryBean implements FactoryBean<String> {
-
-		public TypedFactoryBean() {
-			throw new IllegalStateException();
-		}
-
-		@Override
-		public String getObject() {
-			return "";
-		}
-
-		@Override
-		public Class<?> getObjectType() {
-			return String.class;
-		}
-
-		@Override
-		public boolean isSingleton() {
-			return true;
-		}
-	}
 
 	static class UntypedFactoryBean implements FactoryBean<Object> {
 

@@ -90,7 +90,6 @@ public class NettyDataBufferFactory implements DataBufferFactory {
 	 * @return the wrapped buffer
 	 */
 	public NettyDataBuffer wrap(ByteBuf byteBuf) {
-		byteBuf.touch();
 		return new NettyDataBuffer(byteBuf, this);
 	}
 

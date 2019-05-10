@@ -51,11 +51,11 @@ public interface ExchangeStrategies {
 	// Static builder methods
 
 	/**
-	 * Return an {@code ExchangeStrategies} instance with default configuration
+	 * Return a new {@code ExchangeStrategies} instance with default configuration
 	 * provided by {@link ClientCodecConfigurer}.
 	 */
 	static ExchangeStrategies withDefaults() {
-		return DefaultExchangeStrategiesBuilder.DEFAULT_EXCHANGE_STRATEGIES;
+		return builder().build();
 	}
 
 	/**

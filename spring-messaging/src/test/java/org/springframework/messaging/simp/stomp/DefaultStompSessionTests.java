@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,11 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -43,24 +46,10 @@ import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link DefaultStompSession}.
@@ -82,6 +71,9 @@ public class DefaultStompSessionTests {
 	@Captor
 	private ArgumentCaptor<Message<byte[]>> messageCaptor;
 
+	@Rule
+	public ExpectedException expected = ExpectedException.none();
+
 
 	@Before
 	public void setUp() {
@@ -94,7 +86,7 @@ public class DefaultStompSessionTests {
 
 		SettableListenableFuture<Void> future = new SettableListenableFuture<>();
 		future.set(null);
-		given(this.connection.send(this.messageCaptor.capture())).willReturn(future);
+		when(this.connection.send(this.messageCaptor.capture())).thenReturn(future);
 	}
 
 
@@ -236,7 +228,7 @@ public class DefaultStompSessionTests {
 		String payload = "Oops";
 
 		StompHeaders stompHeaders = StompHeaders.readOnlyStompHeaders(accessor.getNativeHeaders());
-		given(this.sessionHandler.getPayloadType(stompHeaders)).willReturn(String.class);
+		when(this.sessionHandler.getPayloadType(stompHeaders)).thenReturn(String.class);
 
 		this.session.handleMessage(MessageBuilder.createMessage(
 				payload.getBytes(StandardCharsets.UTF_8), accessor.getMessageHeaders()));
@@ -267,7 +259,7 @@ public class DefaultStompSessionTests {
 		byte[] payload = "{'foo':'bar'}".getBytes(StandardCharsets.UTF_8);
 
 		StompHeaders stompHeaders = StompHeaders.readOnlyStompHeaders(accessor.getNativeHeaders());
-		given(this.sessionHandler.getPayloadType(stompHeaders)).willReturn(Map.class);
+		when(this.sessionHandler.getPayloadType(stompHeaders)).thenReturn(Map.class);
 
 		this.session.handleMessage(MessageBuilder.createMessage(payload, accessor.getMessageHeaders()));
 
@@ -294,7 +286,7 @@ public class DefaultStompSessionTests {
 		String payload = "sample payload";
 
 		StompHeaders stompHeaders = StompHeaders.readOnlyStompHeaders(accessor.getNativeHeaders());
-		given(frameHandler.getPayloadType(stompHeaders)).willReturn(String.class);
+		when(frameHandler.getPayloadType(stompHeaders)).thenReturn(String.class);
 
 		this.session.handleMessage(MessageBuilder.createMessage(payload.getBytes(StandardCharsets.UTF_8),
 				accessor.getMessageHeaders()));
@@ -322,7 +314,7 @@ public class DefaultStompSessionTests {
 		byte[] payload = "{'foo':'bar'}".getBytes(StandardCharsets.UTF_8);
 
 		StompHeaders stompHeaders = StompHeaders.readOnlyStompHeaders(accessor.getNativeHeaders());
-		given(frameHandler.getPayloadType(stompHeaders)).willReturn(Map.class);
+		when(frameHandler.getPayloadType(stompHeaders)).thenReturn(Map.class);
 
 		this.session.handleMessage(MessageBuilder.createMessage(payload, accessor.getMessageHeaders()));
 
@@ -406,8 +398,9 @@ public class DefaultStompSessionTests {
 		stompHeaders.setContentType(MimeTypeUtils.APPLICATION_JSON);
 		String payload = "{'foo':'bar'}";
 
-		assertThatExceptionOfType(MessageConversionException.class).isThrownBy(() ->
-				this.session.send(stompHeaders, payload));
+		this.expected.expect(MessageConversionException.class);
+		this.session.send(stompHeaders, payload);
+		verifyNoMoreInteractions(this.connection);
 	}
 
 	@Test
@@ -419,10 +412,13 @@ public class DefaultStompSessionTests {
 		SettableListenableFuture<Void> future = new SettableListenableFuture<>();
 		future.setException(exception);
 
-		given(this.connection.send(any())).willReturn(future);
-		assertThatExceptionOfType(MessageDeliveryException.class).isThrownBy(() ->
-				this.session.send("/topic/foo", "sample payload".getBytes(StandardCharsets.UTF_8)))
-			.withCause(exception);
+		when(this.connection.send(any())).thenReturn(future);
+		this.expected.expect(MessageDeliveryException.class);
+		this.expected.expectCause(Matchers.sameInstance(exception));
+
+		this.session.send("/topic/foo", "sample payload".getBytes(StandardCharsets.UTF_8));
+
+		verifyNoMoreInteractions(this.connection);
 	}
 
 	@Test
@@ -609,7 +605,7 @@ public class DefaultStompSessionTests {
 		AtomicReference<Boolean> notReceived = new AtomicReference<>();
 
 		ScheduledFuture future = mock(ScheduledFuture.class);
-		given(taskScheduler.schedule(any(Runnable.class), any(Date.class))).willReturn(future);
+		when(taskScheduler.schedule(any(Runnable.class), any(Date.class))).thenReturn(future);
 
 		StompHeaders headers = new StompHeaders();
 		headers.setDestination("/topic/foo");

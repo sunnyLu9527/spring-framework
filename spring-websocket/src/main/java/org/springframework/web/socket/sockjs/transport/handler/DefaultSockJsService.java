@@ -78,6 +78,7 @@ public class DefaultSockJsService extends TransportHandlingSockJsService impleme
 	}
 
 
+	@SuppressWarnings("deprecation")
 	private static Set<TransportHandler> getDefaultTransportHandlers(@Nullable Collection<TransportHandler> overrides) {
 		Set<TransportHandler> result = new LinkedHashSet<>(8);
 		result.add(new XhrPollingTransportHandler());

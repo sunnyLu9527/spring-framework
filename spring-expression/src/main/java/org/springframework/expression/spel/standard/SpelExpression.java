@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.springframework.expression.spel.standard;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationContext;
@@ -71,7 +69,7 @@ public class SpelExpression implements Expression {
 
 	// Count of many times as the expression been interpreted - can trigger compilation
 	// when certain limit reached
-	private final AtomicInteger interpretedCount = new AtomicInteger(0);
+	private volatile int interpretedCount = 0;
 
 	// The number of times compilation was attempted and failed - enables us to eventually
 	// give up trying to compile it when it just doesn't seem to be possible.
@@ -126,7 +124,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -161,7 +159,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -188,7 +186,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -223,7 +221,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -253,7 +251,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -288,7 +286,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -316,7 +314,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -353,7 +351,7 @@ public class SpelExpression implements Expression {
 			catch (Throwable ex) {
 				// If running in mixed mode, revert to interpreted
 				if (this.configuration.getCompilerMode() == SpelCompilerMode.MIXED) {
-					this.interpretedCount.set(0);
+					this.interpretedCount = 0;
 					this.compiledAst = null;
 				}
 				else {
@@ -475,17 +473,17 @@ public class SpelExpression implements Expression {
 	 * @param expressionState the expression state used to determine compilation mode
 	 */
 	private void checkCompile(ExpressionState expressionState) {
-		this.interpretedCount.incrementAndGet();
+		this.interpretedCount++;
 		SpelCompilerMode compilerMode = expressionState.getConfiguration().getCompilerMode();
 		if (compilerMode != SpelCompilerMode.OFF) {
 			if (compilerMode == SpelCompilerMode.IMMEDIATE) {
-				if (this.interpretedCount.get() > 1) {
+				if (this.interpretedCount > 1) {
 					compileExpression();
 				}
 			}
 			else {
 				// compilerMode = SpelCompilerMode.MIXED
-				if (this.interpretedCount.get() > INTERPRETED_COUNT_THRESHOLD) {
+				if (this.interpretedCount > INTERPRETED_COUNT_THRESHOLD) {
 					compileExpression();
 				}
 			}
@@ -526,7 +524,7 @@ public class SpelExpression implements Expression {
 	 */
 	public void revertToInterpreted() {
 		this.compiledAst = null;
-		this.interpretedCount.set(0);
+		this.interpretedCount = 0;
 		this.failedAttempts = 0;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,7 +168,7 @@ final class DefaultRenderingResponseBuilder implements RenderingResponse.Builder
 		public DefaultRenderingResponse(int statusCode, HttpHeaders headers,
 				MultiValueMap<String, ResponseCookie> cookies, String name, Map<String, Object> model) {
 
-			super(statusCode, headers, cookies, Collections.emptyMap());
+			super(statusCode, headers, cookies);
 			this.name = name;
 			this.model = Collections.unmodifiableMap(new LinkedHashMap<>(model));
 		}
@@ -192,8 +192,10 @@ final class DefaultRenderingResponseBuilder implements RenderingResponse.Builder
 			return Flux.fromStream(viewResolverStream)
 					.concatMap(viewResolver -> viewResolver.resolveViewName(name(), locale))
 					.next()
-					.switchIfEmpty(Mono.error(() ->
-							new IllegalArgumentException("Could not resolve view with name '" + name() + "'")))
+					.switchIfEmpty(Mono.defer(() -> {
+						String error = "Could not resolve view with name '" + name() + "'";
+						return Mono.error(new IllegalArgumentException(error));
+					}))
 					.flatMap(view -> {
 						List<MediaType> mediaTypes = view.getSupportedMediaTypes();
 						return view.render(model(),

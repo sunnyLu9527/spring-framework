@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,15 @@
 
 package org.springframework.beans;
 
-import java.util.Iterator;
-
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Tests for {@link MutablePropertyValues}.
  *
  * @author Rod Johnson
  * @author Chris Beams
- * @author Juergen Hoeller
  */
 public class MutablePropertyValuesTests extends AbstractPropertyValuesTests {
 
@@ -110,52 +101,6 @@ public class MutablePropertyValuesTests extends AbstractPropertyValuesTests {
 		fn = changes.getPropertyValue("foo");
 		assertTrue("change in foo", fn != null);
 		assertTrue("new value is bar", fn.getValue().equals("bar"));
-	}
-
-	@Test
-	public void iteratorContainsPropertyValue() {
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		pvs.add("foo", "bar");
-
-		Iterator<PropertyValue> it = pvs.iterator();
-		assertTrue(it.hasNext());
-		PropertyValue pv = it.next();
-		assertEquals("foo", pv.getName());
-		assertEquals("bar", pv.getValue());
-
-		try {
-			it.remove();
-			fail("Should have thrown UnsupportedOperationException");
-		}
-		catch (UnsupportedOperationException ex) {
-			// expected
-		}
-		assertFalse(it.hasNext());
-	}
-
-	@Test
-	public void iteratorIsEmptyForEmptyValues() {
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		Iterator<PropertyValue> it = pvs.iterator();
-		assertFalse(it.hasNext());
-	}
-
-	@Test
-	public void streamContainsPropertyValue() {
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		pvs.add("foo", "bar");
-
-		assertThat(pvs.stream(), notNullValue());
-		assertThat(pvs.stream().count(), is(1L));
-		assertThat(pvs.stream().anyMatch(pv -> "foo".equals(pv.getName()) && "bar".equals(pv.getValue())), is(true));
-		assertThat(pvs.stream().anyMatch(pv -> "bar".equals(pv.getName()) && "foo".equals(pv.getValue())), is(false));
-	}
-
-	@Test
-	public void streamIsEmptyForEmptyValues() {
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		assertThat(pvs.stream(), notNullValue());
-		assertThat(pvs.stream().count(), is(0L));
 	}
 
 }

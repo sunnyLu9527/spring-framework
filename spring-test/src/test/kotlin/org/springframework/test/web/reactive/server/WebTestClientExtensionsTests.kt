@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,17 @@
 
 package org.springframework.test.web.reactive.server
 
-import io.mockk.mockk
-import io.mockk.verify
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Answers
+import org.mockito.Mock
+import org.mockito.junit.MockitoJUnitRunner
 import org.reactivestreams.Publisher
+import org.springframework.web.reactive.function.server.ServerResponse.*
 import org.springframework.web.reactive.function.server.router
 
 /**
@@ -28,24 +34,27 @@ import org.springframework.web.reactive.function.server.router
  *
  * @author Sebastien Deleuze
  */
+@RunWith(MockitoJUnitRunner::class)
 class WebTestClientExtensionsTests {
 
-	val requestBodySpec = mockk<WebTestClient.RequestBodySpec>(relaxed = true)
+	@Mock(answer = Answers.RETURNS_MOCKS)
+	lateinit var requestBodySpec: WebTestClient.RequestBodySpec
 
-	val responseSpec = mockk<WebTestClient.ResponseSpec>(relaxed = true)
+	@Mock(answer = Answers.RETURNS_MOCKS)
+	lateinit var responseSpec: WebTestClient.ResponseSpec
 
 
 	@Test
 	fun `RequestBodySpec#body with Publisher and reified type parameters`() {
-		val body = mockk<Publisher<Foo>>()
+		val body = mock<Publisher<Foo>>()
 		requestBodySpec.body(body)
-		verify { requestBodySpec.body(body, Foo::class.java) }
+		verify(requestBodySpec, times(1)).body(body, Foo::class.java)
 	}
 
 	@Test
 	fun `ResponseSpec#expectBody with reified type parameters`() {
 		responseSpec.expectBody<Foo>()
-		verify { responseSpec.expectBody(Foo::class.java) }
+		verify(responseSpec, times(1)).expectBody(Foo::class.java)
 	}
 
 	@Test
@@ -75,13 +84,13 @@ class WebTestClientExtensionsTests {
 	@Test
 	fun `ResponseSpec#expectBodyList with reified type parameters`() {
 		responseSpec.expectBodyList<Foo>()
-		verify { responseSpec.expectBodyList(Foo::class.java) }
+		verify(responseSpec, times(1)).expectBodyList(Foo::class.java)
 	}
 
 	@Test
 	fun `ResponseSpec#returnResult with reified type parameters`() {
 		responseSpec.returnResult<Foo>()
-		verify { responseSpec.returnResult(Foo::class.java) }
+		verify(responseSpec, times(1)).returnResult(Foo::class.java)
 	}
 
 	class Foo

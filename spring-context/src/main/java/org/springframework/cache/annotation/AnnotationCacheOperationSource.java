@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,16 +104,6 @@ public class AnnotationCacheOperationSource extends AbstractFallbackCacheOperati
 
 
 	@Override
-	public boolean isCandidateClass(Class<?> targetClass) {
-		for (CacheAnnotationParser parser : this.annotationParsers) {
-			if (parser.isCandidateClass(targetClass)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
 	@Nullable
 	protected Collection<CacheOperation> findCacheOperations(Class<?> clazz) {
 		return determineCacheOperations(parser -> parser.parseCacheAnnotations(clazz));
@@ -137,8 +127,8 @@ public class AnnotationCacheOperationSource extends AbstractFallbackCacheOperati
 	@Nullable
 	protected Collection<CacheOperation> determineCacheOperations(CacheOperationProvider provider) {
 		Collection<CacheOperation> ops = null;
-		for (CacheAnnotationParser parser : this.annotationParsers) {
-			Collection<CacheOperation> annOps = provider.getCacheOperations(parser);
+		for (CacheAnnotationParser annotationParser : this.annotationParsers) {
+			Collection<CacheOperation> annOps = provider.getCacheOperations(annotationParser);
 			if (annOps != null) {
 				if (ops == null) {
 					ops = annOps;

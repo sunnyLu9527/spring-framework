@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -53,7 +54,7 @@ import org.springframework.util.MimeType;
  * <li>{@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES} is disabled</li>
  * </ul>
  *
- * <p>Compatible with Jackson 2.9 and higher, as of Spring 5.1.
+ * <p>Compatible with Jackson 2.6 and higher, as of Spring 4.3.
  *
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
@@ -73,7 +74,7 @@ public class MappingJackson2MessageConverter extends AbstractMessageConverter {
 	 * the {@code application/json} MIME type with {@code UTF-8} character set.
 	 */
 	public MappingJackson2MessageConverter() {
-		super(new MimeType("application", "json"));
+		super(new MimeType("application", "json", StandardCharsets.UTF_8));
 		this.objectMapper = initObjectMapper();
 	}
 
@@ -181,7 +182,8 @@ public class MappingJackson2MessageConverter extends AbstractMessageConverter {
 		}
 
 		// Do not log warning for serializer not found (note: different message wording on Jackson 2.9)
-		boolean debugLevel = (cause instanceof JsonMappingException && cause.getMessage().startsWith("Cannot find"));
+		boolean debugLevel = (cause instanceof JsonMappingException &&
+				(cause.getMessage().startsWith("Can not find") || cause.getMessage().startsWith("Cannot find")));
 
 		if (debugLevel ? logger.isDebugEnabled() : logger.isWarnEnabled()) {
 			String msg = "Failed to evaluate Jackson " + (type instanceof JavaType ? "de" : "") +
@@ -219,9 +221,6 @@ public class MappingJackson2MessageConverter extends AbstractMessageConverter {
 				else {
 					return this.objectMapper.readValue((byte[]) payload, javaType);
 				}
-			}
-			else if (targetClass.isInstance(payload)) {
-				return payload;
 			}
 			else {
 				if (view != null) {

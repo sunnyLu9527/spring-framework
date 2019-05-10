@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,18 +72,19 @@ public class DefaultResponseErrorHandler implements ResponseErrorHandler {
 	/**
 	 * Template method called from {@link #hasError(ClientHttpResponse)}.
 	 * <p>The default implementation checks if the given status code is
-	 * {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR CLIENT_ERROR} or
-	 * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR SERVER_ERROR}.
+	 * {@code HttpStatus.Series#CLIENT_ERROR CLIENT_ERROR} or
+	 * {@code HttpStatus.Series#SERVER_ERROR SERVER_ERROR}.
 	 * Can be overridden in subclasses.
 	 * @param unknownStatusCode the HTTP status code as raw value
 	 * @return {@code true} if the response indicates an error; {@code false} otherwise
 	 * @since 4.3.21
-	 * @see org.springframework.http.HttpStatus.Series#CLIENT_ERROR
-	 * @see org.springframework.http.HttpStatus.Series#SERVER_ERROR
+	 * @see HttpStatus.Series#CLIENT_ERROR
+	 * @see HttpStatus.Series#SERVER_ERROR
 	 */
 	protected boolean hasError(int unknownStatusCode) {
-		HttpStatus.Series series = HttpStatus.Series.resolve(unknownStatusCode);
-		return (series == HttpStatus.Series.CLIENT_ERROR || series == HttpStatus.Series.SERVER_ERROR);
+		int seriesCode = unknownStatusCode / 100;
+		return (seriesCode == HttpStatus.Series.CLIENT_ERROR.value() ||
+				seriesCode == HttpStatus.Series.SERVER_ERROR.value());
 	}
 
 	/**
@@ -105,26 +106,22 @@ public class DefaultResponseErrorHandler implements ResponseErrorHandler {
 	/**
 	 * Handle the error in the given response with the given resolved status code.
 	 * <p>The default implementation throws an {@link HttpClientErrorException}
-	 * if the status code is {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR
-	 * CLIENT_ERROR}, an {@link HttpServerErrorException} if it is
-	 * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR SERVER_ERROR},
-	 * or an {@link UnknownHttpStatusCodeException} in other cases.
+	 * if the status code is {@link HttpStatus.Series#CLIENT_ERROR}, an
+	 * {@link HttpServerErrorException} if it is {@link HttpStatus.Series#SERVER_ERROR},
+	 * and an {@link UnknownHttpStatusCodeException} in other cases.
 	 * @since 5.0
-	 * @see HttpClientErrorException#create
-	 * @see HttpServerErrorException#create
 	 */
 	protected void handleError(ClientHttpResponse response, HttpStatus statusCode) throws IOException {
-		String statusText = response.getStatusText();
-		HttpHeaders headers = response.getHeaders();
-		byte[] body = getResponseBody(response);
-		Charset charset = getCharset(response);
 		switch (statusCode.series()) {
 			case CLIENT_ERROR:
-				throw HttpClientErrorException.create(statusCode, statusText, headers, body, charset);
+				throw new HttpClientErrorException(statusCode, response.getStatusText(),
+						response.getHeaders(), getResponseBody(response), getCharset(response));
 			case SERVER_ERROR:
-				throw HttpServerErrorException.create(statusCode, statusText, headers, body, charset);
+				throw new HttpServerErrorException(statusCode, response.getStatusText(),
+						response.getHeaders(), getResponseBody(response), getCharset(response));
 			default:
-				throw new UnknownHttpStatusCodeException(statusCode.value(), statusText, headers, body, charset);
+				throw new UnknownHttpStatusCodeException(statusCode.value(), response.getStatusText(),
+						response.getHeaders(), getResponseBody(response), getCharset(response));
 		}
 	}
 

@@ -189,16 +189,6 @@ public class JmsResourceHolder extends ResourceHolderSupport {
 	}
 
 	/**
-	 * Return an existing original Session, if any.
-	 * <p>In contrast to {@link #getSession()}, this must not lazily initialize
-	 * a new Session, not even in {@link JmsResourceHolder} subclasses.
-	 */
-	@Nullable
-	Session getOriginalSession() {
-		return this.sessions.peek();
-	}
-
-	/**
 	 * Return this resource holder's default Session,
 	 * or {@code null} if none.
 	 */

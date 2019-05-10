@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
-import org.springframework.core.io.buffer.PooledDataBuffer;
-import org.springframework.core.log.LogFormatUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -55,23 +53,24 @@ import org.springframework.util.MimeTypeUtils;
  * @since 5.0
  * @see CharSequenceEncoder
  */
-public final class StringDecoder extends AbstractDataBufferDecoder<String> {
+public class StringDecoder extends AbstractDataBufferDecoder<String> {
 
 	private static final DataBuffer END_FRAME = new DefaultDataBufferFactory().wrap(new byte[0]);
 
-	/** The default charset to use, i.e. "UTF-8". */
+	/**
+	 * The default charset to use, i.e. "UTF-8".
+	 */
 	public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-	/** The default delimiter strings to use, i.e. {@code \r\n} and {@code \n}. */
+	/**
+	 * The default delimiter strings to use, i.e. {@code \n} and {@code \r\n}.
+	 */
 	public static final List<String> DEFAULT_DELIMITERS = Arrays.asList("\r\n", "\n");
 
 
 	private final List<String> delimiters;
 
 	private final boolean stripDelimiter;
-
-	private final ConcurrentMap<Charset, List<byte[]>> delimitersCache = new ConcurrentHashMap<>();
-
 
 	private StringDecoder(List<String> delimiters, boolean stripDelimiter, MimeType... mimeTypes) {
 		super(mimeTypes);
@@ -83,137 +82,128 @@ public final class StringDecoder extends AbstractDataBufferDecoder<String> {
 
 	@Override
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		return (elementType.resolve() == String.class && super.canDecode(elementType, mimeType));
+		return (elementType.getRawClass() == String.class && super.canDecode(elementType, mimeType));
 	}
 
 	@Override
-	public Flux<String> decode(Publisher<DataBuffer> input, ResolvableType elementType,
+	public Flux<String> decode(Publisher<DataBuffer> inputStream, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		List<byte[]> delimiterBytes = getDelimiterBytes(mimeType);
 
-		Flux<DataBuffer> inputFlux = Flux.from(input)
-				.flatMapIterable(buffer -> splitOnDelimiter(buffer, delimiterBytes))
-				.bufferUntil(buffer -> buffer == END_FRAME)
-				.map(StringDecoder::joinUntilEndFrame)
-				.doOnDiscard(PooledDataBuffer.class, DataBufferUtils::release);
-
+		Flux<DataBuffer> inputFlux = Flux.from(inputStream)
+				.flatMap(dataBuffer -> splitOnDelimiter(dataBuffer, delimiterBytes))
+				.bufferUntil(StringDecoder::isEndFrame)
+				.flatMap(StringDecoder::joinUntilEndFrame);
 		return super.decode(inputFlux, elementType, mimeType, hints);
 	}
 
 	private List<byte[]> getDelimiterBytes(@Nullable MimeType mimeType) {
-		return this.delimitersCache.computeIfAbsent(getCharset(mimeType), charset -> {
-			List<byte[]> list = new ArrayList<>();
-			for (String delimiter : this.delimiters) {
-				byte[] bytes = delimiter.getBytes(charset);
-				list.add(bytes);
-			}
-			return list;
-		});
+		Charset charset = getCharset(mimeType);
+		return this.delimiters.stream()
+				.map(s -> s.getBytes(charset))
+				.collect(Collectors.toList());
 	}
 
 	/**
 	 * Split the given data buffer on delimiter boundaries.
 	 * The returned Flux contains an {@link #END_FRAME} buffer after each delimiter.
 	 */
-	private List<DataBuffer> splitOnDelimiter(DataBuffer buffer, List<byte[]> delimiterBytes) {
+	private Flux<DataBuffer> splitOnDelimiter(DataBuffer dataBuffer, List<byte[]> delimiterBytes) {
 		List<DataBuffer> frames = new ArrayList<>();
-		try {
-			do {
-				int length = Integer.MAX_VALUE;
-				byte[] matchingDelimiter = null;
-				for (byte[] delimiter : delimiterBytes) {
-					int index = indexOf(buffer, delimiter);
-					if (index >= 0 && index < length) {
-						length = index;
-						matchingDelimiter = delimiter;
-					}
+		do {
+			int length = Integer.MAX_VALUE;
+			byte[] matchingDelimiter = null;
+			for (byte[] delimiter : delimiterBytes) {
+				int index = indexOf(dataBuffer, delimiter);
+				if (index >= 0 && index < length) {
+					length = index;
+					matchingDelimiter = delimiter;
 				}
-				DataBuffer frame;
-				int readPosition = buffer.readPosition();
-				if (matchingDelimiter != null) {
-					frame = this.stripDelimiter ?
-							buffer.slice(readPosition, length) :
-							buffer.slice(readPosition, length + matchingDelimiter.length);
-					buffer.readPosition(readPosition + length + matchingDelimiter.length);
-					frames.add(DataBufferUtils.retain(frame));
-					frames.add(END_FRAME);
+			}
+			DataBuffer frame;
+			int readPosition = dataBuffer.readPosition();
+			if (matchingDelimiter != null) {
+				if (this.stripDelimiter) {
+					frame = dataBuffer.slice(readPosition, length);
 				}
 				else {
-					frame = buffer.slice(readPosition, buffer.readableByteCount());
-					buffer.readPosition(readPosition + buffer.readableByteCount());
-					frames.add(DataBufferUtils.retain(frame));
+					frame = dataBuffer.slice(readPosition, length + matchingDelimiter.length);
 				}
+				dataBuffer.readPosition(readPosition + length + matchingDelimiter.length);
+
+				frames.add(DataBufferUtils.retain(frame));
+				frames.add(END_FRAME);
 			}
-			while (buffer.readableByteCount() > 0);
-		}
-		catch (Throwable ex) {
-			for (DataBuffer frame : frames) {
-				DataBufferUtils.release(frame);
+			else {
+				frame = dataBuffer.slice(readPosition, dataBuffer.readableByteCount());
+				dataBuffer.readPosition(readPosition + dataBuffer.readableByteCount());
+				frames.add(DataBufferUtils.retain(frame));
 			}
-			throw ex;
 		}
-		finally {
-			DataBufferUtils.release(buffer);
-		}
-		return frames;
+		while (dataBuffer.readableByteCount() > 0);
+
+		DataBufferUtils.release(dataBuffer);
+		return Flux.fromIterable(frames);
 	}
 
 	/**
 	 * Find the given delimiter in the given data buffer.
 	 * @return the index of the delimiter, or -1 if not found.
 	 */
-	private static int indexOf(DataBuffer buffer, byte[] delimiter) {
-		for (int i = buffer.readPosition(); i < buffer.writePosition(); i++) {
-			int bufferPos = i;
+	private static int indexOf(DataBuffer dataBuffer, byte[] delimiter) {
+		for (int i = dataBuffer.readPosition(); i < dataBuffer.writePosition(); i++) {
+			int dataBufferPos = i;
 			int delimiterPos = 0;
 			while (delimiterPos < delimiter.length) {
-				if (buffer.getByte(bufferPos) != delimiter[delimiterPos]) {
+				if (dataBuffer.getByte(dataBufferPos) != delimiter[delimiterPos]) {
 					break;
 				}
 				else {
-					bufferPos++;
-					boolean endOfBuffer = bufferPos == buffer.writePosition();
-					boolean endOfDelimiter = delimiterPos == delimiter.length - 1;
-					if (endOfBuffer && !endOfDelimiter) {
+					dataBufferPos++;
+					if (dataBufferPos == dataBuffer.writePosition() &&
+							delimiterPos != delimiter.length - 1) {
 						return -1;
 					}
 				}
 				delimiterPos++;
 			}
 			if (delimiterPos == delimiter.length) {
-				return i - buffer.readPosition();
+				return i - dataBuffer.readPosition();
 			}
 		}
 		return -1;
 	}
 
 	/**
+	 * Check whether the given buffer is {@link #END_FRAME}.
+	 */
+	private static boolean isEndFrame(DataBuffer dataBuffer) {
+		return dataBuffer == END_FRAME;
+	}
+
+	/**
 	 * Join the given list of buffers into a single buffer.
 	 */
-	private static DataBuffer joinUntilEndFrame(List<DataBuffer> dataBuffers) {
+	private static Mono<DataBuffer> joinUntilEndFrame(List<DataBuffer> dataBuffers) {
 		if (!dataBuffers.isEmpty()) {
 			int lastIdx = dataBuffers.size() - 1;
-			if (dataBuffers.get(lastIdx) == END_FRAME) {
+			if (isEndFrame(dataBuffers.get(lastIdx))) {
 				dataBuffers.remove(lastIdx);
 			}
 		}
-		return dataBuffers.get(0).factory().join(dataBuffers);
+		Flux<DataBuffer> flux = Flux.fromIterable(dataBuffers);
+		return DataBufferUtils.join(flux);
 	}
 
 	@Override
-	public String decode(DataBuffer dataBuffer, ResolvableType elementType,
+	protected String decodeDataBuffer(DataBuffer dataBuffer, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		Charset charset = getCharset(mimeType);
 		CharBuffer charBuffer = charset.decode(dataBuffer.asByteBuffer());
 		DataBufferUtils.release(dataBuffer);
-		String value = charBuffer.toString();
-		LogFormatUtils.traceDebug(logger, traceOn -> {
-			String formatted = LogFormatUtils.formatValue(value, !traceOn);
-			return Hints.getLogPrefix(hints) + "Decoded " + formatted;
-		});
-		return value;
+		return charBuffer.toString();
 	}
 
 	private static Charset getCharset(@Nullable MimeType mimeType) {

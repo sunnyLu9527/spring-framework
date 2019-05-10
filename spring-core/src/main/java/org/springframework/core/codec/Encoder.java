@@ -60,33 +60,26 @@ public interface Encoder<T> {
 	 * @param elementType the expected type of elements in the input stream;
 	 * this type must have been previously passed to the {@link #canEncode}
 	 * method and it must have returned {@code true}.
-	 * @param mimeType the MIME type for the output content (optional)
-	 * @param hints additional information about how to encode
+	 * @param mimeType the MIME type for the output stream (optional)
+	 * @param hints additional information about how to do encode
 	 * @return the output stream
 	 */
 	Flux<DataBuffer> encode(Publisher<? extends T> inputStream, DataBufferFactory bufferFactory,
 			ResolvableType elementType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints);
 
 	/**
-	 * Encode an Object of type T to a data buffer. This is useful for scenarios
-	 * that produce a stream of discrete messages (or events) and the
-	 * content for each is encoded individually.
-	 * <p>By default this method raises {@link UnsupportedOperationException}
-	 * and it is expected that some encoders cannot produce a single buffer or
-	 * cannot do so synchronously (e.g. encoding a {@code Resource}).
-	 * @param value the value to be encoded
-	 * @param bufferFactory for creating the output {@code DataBuffer}
-	 * @param valueType the type for the value being encoded
-	 * @param mimeType the MIME type for the output content (optional)
-	 * @param hints additional information about how to encode
-	 * @return the encoded content
-	 * @since 5.2
+	 * Return the length for the given item, if known.
+	 * @param t the item to check
+	 * @return the length in bytes, or {@code null} if not known.
+	 * @since 5.0.5
+	 * @deprecated this method was added so {@code EncoderHttpMessageWriter}
+	 * can set the content-length header. However after further improvements as
+	 * of 5.0.7, it is no longer needed, and not used.
 	 */
-	default DataBuffer encodeValue(T value, DataBufferFactory bufferFactory,
-			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
-
-		// It may not be possible to produce a single DataBuffer synchronously
-		throw new UnsupportedOperationException();
+	@Nullable
+	@Deprecated
+	default Long getContentLength(T t, @Nullable MimeType mimeType) {
+		return null;
 	}
 
 	/**

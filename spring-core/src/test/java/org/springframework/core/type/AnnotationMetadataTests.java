@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -38,15 +37,8 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import org.springframework.stereotype.Component;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests demonstrating that the reflection-based {@link StandardAnnotationMetadata}
@@ -61,7 +53,7 @@ public class AnnotationMetadataTests {
 
 	@Test
 	public void standardAnnotationMetadata() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(AnnotatedComponent.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(AnnotatedComponent.class, true);
 		doTestAnnotationInfo(metadata);
 		doTestMethodAnnotationInfo(metadata);
 	}
@@ -77,7 +69,7 @@ public class AnnotationMetadataTests {
 
 	@Test
 	public void standardAnnotationMetadataForSubclass() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(AnnotatedComponentSubClass.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(AnnotatedComponentSubClass.class, true);
 		doTestSubClassAnnotationInfo(metadata);
 	}
 
@@ -113,7 +105,7 @@ public class AnnotationMetadataTests {
 
 	@Test
 	public void standardAnnotationMetadataForInterface() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(AnnotationMetadata.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(AnnotationMetadata.class, true);
 		doTestMetadataForInterfaceClass(metadata);
 	}
 
@@ -141,7 +133,7 @@ public class AnnotationMetadataTests {
 
 	@Test
 	public void standardAnnotationMetadataForAnnotation() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(Component.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(Component.class, true);
 		doTestMetadataForAnnotationClass(metadata);
 	}
 
@@ -166,10 +158,10 @@ public class AnnotationMetadataTests {
 		assertThat(metadata.isAnnotated(Documented.class.getName()), is(false));
 		assertThat(metadata.isAnnotated(Scope.class.getName()), is(false));
 		assertThat(metadata.isAnnotated(SpecialAttr.class.getName()), is(false));
-		assertThat(metadata.hasAnnotation(Documented.class.getName()), is(false));
+		assertThat(metadata.hasAnnotation(Documented.class.getName()), is(true));
 		assertThat(metadata.hasAnnotation(Scope.class.getName()), is(false));
 		assertThat(metadata.hasAnnotation(SpecialAttr.class.getName()), is(false));
-		assertThat(metadata.getAnnotationTypes().size(), is(1));
+		assertThat(metadata.getAnnotationTypes().size(), is(4));
 	}
 
 	/**
@@ -180,7 +172,6 @@ public class AnnotationMetadataTests {
 	 * 'true' as is done in the main test above.
 	 */
 	@Test
-	@Deprecated
 	public void standardAnnotationMetadata_nestedAnnotationsAsMap_false() {
 		AnnotationMetadata metadata = new StandardAnnotationMetadata(AnnotatedComponent.class);
 		AnnotationAttributes specialAttrs = (AnnotationAttributes) metadata.getAnnotationAttributes(SpecialAttr.class.getName());
@@ -189,7 +180,6 @@ public class AnnotationMetadataTests {
 	}
 
 	@Test
-	@Deprecated
 	public void metaAnnotationOverridesUsingStandardAnnotationMetadata() {
 		AnnotationMetadata metadata = new StandardAnnotationMetadata(ComposedConfigurationWithAttributeOverridesClass.class);
 		assertMetaAnnotationOverrides(metadata);
@@ -217,7 +207,7 @@ public class AnnotationMetadataTests {
 
 	@Test  // SPR-11649
 	public void multipleAnnotationsWithIdenticalAttributeNamesUsingStandardAnnotationMetadata() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(NamedAnnotationsClass.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(NamedAnnotationsClass.class);
 		assertMultipleAnnotationsWithIdenticalAttributeNames(metadata);
 	}
 
@@ -231,7 +221,7 @@ public class AnnotationMetadataTests {
 
 	@Test  // SPR-11649
 	public void composedAnnotationWithMetaAnnotationsWithIdenticalAttributeNamesUsingStandardAnnotationMetadata() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(NamedComposedAnnotationClass.class);
+		AnnotationMetadata metadata = new StandardAnnotationMetadata(NamedComposedAnnotationClass.class);
 		assertMultipleAnnotationsWithIdenticalAttributeNames(metadata);
 	}
 
@@ -241,20 +231,6 @@ public class AnnotationMetadataTests {
 		MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(NamedComposedAnnotationClass.class.getName());
 		AnnotationMetadata metadata = metadataReader.getAnnotationMetadata();
 		assertMultipleAnnotationsWithIdenticalAttributeNames(metadata);
-	}
-
-	@Test
-	public void inheritedAnnotationWithMetaAnnotationsWithIdenticalAttributeNamesUsingStandardAnnotationMetadata() {
-		AnnotationMetadata metadata = AnnotationMetadata.introspect(NamedComposedAnnotationExtended.class);
-		assertFalse(metadata.hasAnnotation(NamedComposedAnnotation.class.getName()));
-	}
-
-	@Test
-	public void inheritedAnnotationWithMetaAnnotationsWithIdenticalAttributeNamesUsingAnnotationMetadataReadingVisitor() throws Exception {
-		MetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory();
-		MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(NamedComposedAnnotationExtended.class.getName());
-		AnnotationMetadata metadata = metadataReader.getAnnotationMetadata();
-		assertFalse(metadata.hasAnnotation(NamedComposedAnnotation.class.getName()));
 	}
 
 
@@ -569,15 +545,11 @@ public class AnnotationMetadataTests {
 	@NamedAnnotation3(name = "name 3")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.TYPE)
-	@Inherited
 	public @interface NamedComposedAnnotation {
 	}
 
 	@NamedComposedAnnotation
 	public static class NamedComposedAnnotationClass {
-	}
-
-	public static class NamedComposedAnnotationExtended extends NamedComposedAnnotationClass {
 	}
 
 }

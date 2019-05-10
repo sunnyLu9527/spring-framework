@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class RequestParamMethodArgumentResolverTests {
 		catch (IllegalStateException ex) {
 			assertTrue("Unexpected error message:\n" + ex.getMessage(),
 					ex.getMessage().startsWith(
-							"RequestParamMethodArgumentResolver does not support reactive type wrapper"));
+							"RequestParamMethodArgumentResolver doesn't support reactive type wrapper"));
 		}
 		try {
 			param = this.testMethod.annotNotPresent(RequestParam.class).arg(Mono.class, String.class);
@@ -128,7 +128,7 @@ public class RequestParamMethodArgumentResolverTests {
 		catch (IllegalStateException ex) {
 			assertTrue("Unexpected error message:\n" + ex.getMessage(),
 					ex.getMessage().startsWith(
-							"RequestParamMethodArgumentResolver does not support reactive type wrapper"));
+							"RequestParamMethodArgumentResolver doesn't support reactive type wrapper"));
 		}
 	}
 

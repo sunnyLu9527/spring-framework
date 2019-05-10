@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,8 @@ import org.springframework.oxm.MarshallingFailureException;
 import org.springframework.oxm.Unmarshaller;
 import org.springframework.oxm.UnmarshallingFailureException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.*;
 
 /**
  * Tests for {@link MarshallingHttpMessageConverter}.
@@ -95,7 +87,7 @@ public class MarshallingHttpMessageConverterTests {
 		assertEquals("Invalid result", body, result);
 	}
 
-	@Test
+	@Test(expected = TypeMismatchException.class)
 	public void readWithTypeMismatchException() throws Exception {
 		MockHttpInputMessage inputMessage = new MockHttpInputMessage(new byte[0]);
 
@@ -104,13 +96,7 @@ public class MarshallingHttpMessageConverterTests {
 		given(unmarshaller.unmarshal(isA(StreamSource.class))).willReturn(Integer.valueOf(3));
 
 		MarshallingHttpMessageConverter converter = new MarshallingHttpMessageConverter(marshaller, unmarshaller);
-		try {
-			converter.read(String.class, inputMessage);
-			fail("Should have thrown HttpMessageNotReadableException");
-		}
-		catch (HttpMessageNotReadableException ex) {
-			assertTrue(ex.getCause() instanceof TypeMismatchException);
-		}
+		converter.read(String.class, inputMessage);
 	}
 
 	@Test

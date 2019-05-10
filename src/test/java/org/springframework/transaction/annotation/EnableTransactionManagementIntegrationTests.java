@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.sql.DataSource;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.aop.Advisor;
@@ -43,17 +44,13 @@ import org.springframework.tests.transaction.CallCountingTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Integration tests for the @EnableTransactionManagement annotation.
  *
  * @author Chris Beams
- * @author Sam Brannen
  * @since 3.1
  */
 @SuppressWarnings("resource")
@@ -92,9 +89,13 @@ public class EnableTransactionManagementIntegrationTests {
 		assertTxProxying(ctx);
 	}
 
-	@Test
+	@Ignore @Test // TODO SPR-8207
 	public void repositoryIsTxProxy_withNonConventionalTxManagerName_fallsBackToByTypeLookup() {
-		assertTxProxying(new AnnotationConfigApplicationContext(Config.class, NonConventionalTxManagerNameConfig.class));
+		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+		ctx.register(Config.class, NonConventionalTxManagerNameConfig.class);
+		ctx.refresh();
+
+		assertTxProxying(ctx);
 	}
 
 	@Test
@@ -118,7 +119,7 @@ public class EnableTransactionManagementIntegrationTests {
 			// this test is a bit fragile, but gets the job done, proving that an
 			// attempt was made to look up the AJ aspect. It's due to classpath issues
 			// in .integration-tests that it's not found.
-			assertTrue(ex.getMessage().contains("AspectJJtaTransactionManagementConfiguration"));
+			assertTrue(ex.getMessage().contains("AspectJTransactionManagementConfiguration"));
 		}
 	}
 

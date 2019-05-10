@@ -25,7 +25,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -37,13 +36,8 @@ import java.util.TimeZone;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link org.springframework.http.HttpHeaders}.
@@ -52,7 +46,6 @@ import static org.junit.Assert.assertTrue;
  * @author Sebastien Deleuze
  * @author Brian Clozel
  * @author Juergen Hoeller
- * @author Sam Brannen
  */
 public class HttpHeadersTests {
 
@@ -355,17 +348,10 @@ public class HttpHeadersTests {
 	}
 
 	@Test
-	public void cacheControlEmpty() {
-		headers.setCacheControl(CacheControl.empty());
-		assertNull("Invalid Cache-Control header", headers.getCacheControl());
-		assertNull("Invalid Cache-Control header", headers.getFirst("cache-control"));
-	}
-
-	@Test
 	public void cacheControlAllValues() {
 		headers.add(HttpHeaders.CACHE_CONTROL, "max-age=1000, public");
 		headers.add(HttpHeaders.CACHE_CONTROL, "s-maxage=1000");
-		assertEquals("max-age=1000, public, s-maxage=1000", headers.getCacheControl());
+		assertThat(headers.getCacheControl(), is("max-age=1000, public, s-maxage=1000"));
 	}
 
 	@Test
@@ -381,7 +367,7 @@ public class HttpHeadersTests {
 
 	@Test  // SPR-11917
 	public void getAllowEmptySet() {
-		headers.setAllow(Collections.emptySet());
+		headers.setAllow(Collections.<HttpMethod> emptySet());
 		assertThat(headers.getAllow(), Matchers.emptyCollectionOf(HttpMethod.class));
 	}
 
@@ -520,11 +506,10 @@ public class HttpHeadersTests {
 		assertTrue(headers.getFirstZonedDateTime(HttpHeaders.DATE).isEqual(date));
 
 		headers.clear();
+		ZonedDateTime otherDate = ZonedDateTime.of(2010, 12, 18, 10, 20, 0, 0, ZoneId.of("GMT"));
 		headers.add(HttpHeaders.DATE, "Fri, 02 Jun 2017 02:22:00 GMT");
 		headers.add(HttpHeaders.DATE, "Sat, 18 Dec 2010 10:20:00 GMT");
 		assertTrue(headers.getFirstZonedDateTime(HttpHeaders.DATE).isEqual(date));
-		assertEquals(Arrays.asList("Fri, 02 Jun 2017 02:22:00 GMT",
-				"Sat, 18 Dec 2010 10:20:00 GMT"), headers.get(HttpHeaders.DATE));
 
 		// obsolete RFC 850 format
 		headers.clear();
@@ -535,62 +520,6 @@ public class HttpHeadersTests {
 		headers.clear();
 		headers.set(HttpHeaders.DATE, "Fri Jun 02 02:22:00 2017");
 		assertTrue(headers.getFirstZonedDateTime(HttpHeaders.DATE).isEqual(date));
-	}
-
-	@Test
-	public void basicAuth() {
-		String username = "foo";
-		String password = "bar";
-		headers.setBasicAuth(username, password);
-		String authorization = headers.getFirst(HttpHeaders.AUTHORIZATION);
-		assertNotNull(authorization);
-		assertTrue(authorization.startsWith("Basic "));
-		byte[] result = Base64.getDecoder().decode(authorization.substring(6).getBytes(StandardCharsets.ISO_8859_1));
-		assertEquals("foo:bar", new String(result, StandardCharsets.ISO_8859_1));
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void basicAuthIllegalChar() {
-		String username = "foo";
-		String password = "\u03BB";
-		headers.setBasicAuth(username, password);
-	}
-
-	@Test
-	public void bearerAuth() {
-		String token = "foo";
-
-		headers.setBearerAuth(token);
-		String authorization = headers.getFirst(HttpHeaders.AUTHORIZATION);
-		assertEquals("Bearer foo", authorization);
-	}
-
-	@Test
-	public void removalFromKeySetRemovesEntryFromUnderlyingMap() {
-		String headerName = "MyHeader";
-		String headerValue = "value";
-
-		assertTrue(headers.isEmpty());
-		headers.add(headerName, headerValue);
-		assertTrue(headers.containsKey(headerName));
-		headers.keySet().removeIf(key -> key.equals(headerName));
-		assertTrue(headers.isEmpty());
-		headers.add(headerName, headerValue);
-		assertEquals(headerValue, headers.get(headerName).get(0));
-	}
-
-	@Test
-	public void removalFromEntrySetRemovesEntryFromUnderlyingMap() {
-		String headerName = "MyHeader";
-		String headerValue = "value";
-
-		assertTrue(headers.isEmpty());
-		headers.add(headerName, headerValue);
-		assertTrue(headers.containsKey(headerName));
-		headers.entrySet().removeIf(entry -> entry.getKey().equals(headerName));
-		assertTrue(headers.isEmpty());
-		headers.add(headerName, headerValue);
-		assertEquals(headerValue, headers.get(headerName).get(0));
 	}
 
 }

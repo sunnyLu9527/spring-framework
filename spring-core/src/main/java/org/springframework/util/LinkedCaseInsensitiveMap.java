@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,12 @@
 package org.springframework.util;
 
 import java.io.Serializable;
-import java.util.AbstractCollection;
-import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.springframework.lang.Nullable;
 
@@ -42,7 +36,6 @@ import org.springframework.lang.Nullable;
  * <p>Does <i>not</i> support {@code null} keys.
  *
  * @author Juergen Hoeller
- * @author Phillip Webb
  * @since 3.0
  * @param <V> the value type
  */
@@ -54,15 +47,6 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 	private final HashMap<String, String> caseInsensitiveKeys;
 
 	private final Locale locale;
-
-	@Nullable
-	private transient volatile Set<String> keySet;
-
-	@Nullable
-	private transient volatile Collection<V> values;
-
-	@Nullable
-	private transient volatile Set<Entry<String, V>> entrySet;
 
 
 	/**
@@ -113,7 +97,7 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 			protected boolean removeEldestEntry(Map.Entry<String, V> eldest) {
 				boolean doRemove = LinkedCaseInsensitiveMap.this.removeEldestEntry(eldest);
 				if (doRemove) {
-					removeCaseInsensitiveKey(eldest.getKey());
+					caseInsensitiveKeys.remove(convertKey(eldest.getKey()));
 				}
 				return doRemove;
 			}
@@ -183,12 +167,10 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 	@Nullable
 	public V put(String key, @Nullable V value) {
 		String oldKey = this.caseInsensitiveKeys.put(convertKey(key), key);
-		V oldKeyValue = null;
 		if (oldKey != null && !oldKey.equals(key)) {
-			oldKeyValue = this.targetMap.remove(oldKey);
+			this.targetMap.remove(oldKey);
 		}
-		V oldValue = this.targetMap.put(key, value);
-		return (oldKeyValue != null ? oldKeyValue : oldValue);
+		return this.targetMap.put(key, value);
 	}
 
 	@Override
@@ -201,29 +183,9 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 
 	@Override
 	@Nullable
-	public V putIfAbsent(String key, @Nullable V value) {
-		String oldKey = this.caseInsensitiveKeys.putIfAbsent(convertKey(key), key);
-		if (oldKey != null) {
-			return this.targetMap.get(oldKey);
-		}
-		return this.targetMap.putIfAbsent(key, value);
-	}
-
-	@Override
-	@Nullable
-	public V computeIfAbsent(String key, Function<? super String, ? extends V> mappingFunction) {
-		String oldKey = this.caseInsensitiveKeys.putIfAbsent(convertKey(key), key);
-		if (oldKey != null) {
-			return this.targetMap.get(oldKey);
-		}
-		return this.targetMap.computeIfAbsent(key, mappingFunction);
-	}
-
-	@Override
-	@Nullable
 	public V remove(Object key) {
 		if (key instanceof String) {
-			String caseInsensitiveKey = removeCaseInsensitiveKey((String) key);
+			String caseInsensitiveKey = this.caseInsensitiveKeys.remove(convertKey((String) key));
 			if (caseInsensitiveKey != null) {
 				return this.targetMap.remove(caseInsensitiveKey);
 			}
@@ -239,32 +201,17 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 
 	@Override
 	public Set<String> keySet() {
-		Set<String> keySet = this.keySet;
-		if (keySet == null) {
-			keySet = new KeySet(this.targetMap.keySet());
-			this.keySet = keySet;
-		}
-		return keySet;
+		return this.targetMap.keySet();
 	}
 
 	@Override
 	public Collection<V> values() {
-		Collection<V> values = this.values;
-		if (values == null) {
-			values = new Values(this.targetMap.values());
-			this.values = values;
-		}
-		return values;
+		return this.targetMap.values();
 	}
 
 	@Override
 	public Set<Entry<String, V>> entrySet() {
-		Set<Entry<String, V>> entrySet = this.entrySet;
-		if (entrySet == null) {
-			entrySet = new EntrySet(this.targetMap.entrySet());
-			this.entrySet = entrySet;
-		}
-		return entrySet;
+		return this.targetMap.entrySet();
 	}
 
 	@Override
@@ -321,207 +268,6 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 	 */
 	protected boolean removeEldestEntry(Map.Entry<String, V> eldest) {
 		return false;
-	}
-
-	@Nullable
-	private String removeCaseInsensitiveKey(String key) {
-		return this.caseInsensitiveKeys.remove(convertKey(key));
-	}
-
-
-	private class KeySet extends AbstractSet<String> {
-
-		private final Set<String> delegate;
-
-		KeySet(Set<String> delegate) {
-			this.delegate = delegate;
-		}
-
-		@Override
-		public int size() {
-			return this.delegate.size();
-		}
-
-		@Override
-		public boolean contains(Object o) {
-			return this.delegate.contains(o);
-		}
-
-		@Override
-		public Iterator<String> iterator() {
-			return new KeySetIterator();
-		}
-
-		@Override
-		public boolean remove(Object o) {
-			return LinkedCaseInsensitiveMap.this.remove(o) != null;
-		}
-
-		@Override
-		public void clear() {
-			LinkedCaseInsensitiveMap.this.clear();
-		}
-
-		@Override
-		public Spliterator<String> spliterator() {
-			return this.delegate.spliterator();
-		}
-
-		@Override
-		public void forEach(Consumer<? super String> action) {
-			this.delegate.forEach(action);
-		}
-	}
-
-
-	private class Values extends AbstractCollection<V> {
-
-		private final Collection<V> delegate;
-
-		Values(Collection<V> delegate) {
-			this.delegate = delegate;
-		}
-
-		@Override
-		public int size() {
-			return this.delegate.size();
-		}
-
-		@Override
-		public boolean contains(Object o) {
-			return this.delegate.contains(o);
-		}
-
-		@Override
-		public Iterator<V> iterator() {
-			return new ValuesIterator();
-		}
-
-		@Override
-		public void clear() {
-			LinkedCaseInsensitiveMap.this.clear();
-		}
-
-		@Override
-		public Spliterator<V> spliterator() {
-			return this.delegate.spliterator();
-		}
-
-		@Override
-		public void forEach(Consumer<? super V> action) {
-			this.delegate.forEach(action);
-		}
-	}
-
-
-	private class EntrySet extends AbstractSet<Entry<String, V>> {
-
-		private final Set<Entry<String, V>> delegate;
-
-		public EntrySet(Set<Entry<String, V>> delegate) {
-			this.delegate = delegate;
-		}
-
-		@Override
-		public int size() {
-			return this.delegate.size();
-		}
-
-		@Override
-		public boolean contains(Object o) {
-			return this.delegate.contains(o);
-		}
-
-		@Override
-		public Iterator<Entry<String, V>> iterator() {
-			return new EntrySetIterator();
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public boolean remove(Object o) {
-			if (this.delegate.remove(o)) {
-				removeCaseInsensitiveKey(((Map.Entry<String, V>) o).getKey());
-				return true;
-			}
-			return false;
-		}
-
-		@Override
-		public void clear() {
-			this.delegate.clear();
-			caseInsensitiveKeys.clear();
-		}
-
-		@Override
-		public Spliterator<Entry<String, V>> spliterator() {
-			return this.delegate.spliterator();
-		}
-
-		@Override
-		public void forEach(Consumer<? super Entry<String, V>> action) {
-			this.delegate.forEach(action);
-		}
-	}
-
-
-	private abstract class EntryIterator<T> implements Iterator<T> {
-
-		private final Iterator<Entry<String, V>> delegate;
-
-		@Nullable
-		private Entry<String, V> last;
-
-		public EntryIterator() {
-			this.delegate = targetMap.entrySet().iterator();
-		}
-
-		protected Entry<String, V> nextEntry() {
-			Entry<String, V> entry = this.delegate.next();
-			this.last = entry;
-			return entry;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return this.delegate.hasNext();
-		}
-
-		@Override
-		public void remove() {
-			this.delegate.remove();
-			if (this.last != null) {
-				removeCaseInsensitiveKey(this.last.getKey());
-				this.last = null;
-			}
-		}
-	}
-
-
-	private class KeySetIterator extends EntryIterator<String> {
-
-		@Override
-		public String next() {
-			return nextEntry().getKey();
-		}
-	}
-
-
-	private class ValuesIterator extends EntryIterator<V> {
-
-		@Override
-		public V next() {
-			return nextEntry().getValue();
-		}
-	}
-
-
-	private class EntrySetIterator extends EntryIterator<Entry<String, V>> {
-
-		@Override
-		public Entry<String, V> next() {
-			return nextEntry();
-		}
 	}
 
 }

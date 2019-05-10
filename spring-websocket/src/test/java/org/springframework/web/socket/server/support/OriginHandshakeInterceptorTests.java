@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -31,11 +32,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.socket.AbstractHttpRequestTests;
 import org.springframework.web.socket.WebSocketHandler;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test fixture for {@link OriginHandshakeInterceptor}.
@@ -65,7 +61,7 @@ public class OriginHandshakeInterceptorTests extends AbstractHttpRequestTests {
 		Map<String, Object> attributes = new HashMap<>();
 		WebSocketHandler wsHandler = Mockito.mock(WebSocketHandler.class);
 		this.servletRequest.addHeader(HttpHeaders.ORIGIN, "https://mydomain1.com");
-		List<String> allowed = Collections.singletonList("https://mydomain2.com");
+		List<String> allowed = Collections.singletonList("http://mydomain2.com");
 		OriginHandshakeInterceptor interceptor = new OriginHandshakeInterceptor(allowed);
 		assertFalse(interceptor.beforeHandshake(request, response, wsHandler, attributes));
 		assertEquals(servletResponse.getStatus(), HttpStatus.FORBIDDEN.value());
@@ -75,8 +71,8 @@ public class OriginHandshakeInterceptorTests extends AbstractHttpRequestTests {
 	public void originListMatch() throws Exception {
 		Map<String, Object> attributes = new HashMap<>();
 		WebSocketHandler wsHandler = Mockito.mock(WebSocketHandler.class);
-		this.servletRequest.addHeader(HttpHeaders.ORIGIN, "https://mydomain2.com");
-		List<String> allowed = Arrays.asList("https://mydomain1.com", "https://mydomain2.com", "http://mydomain3.com");
+		this.servletRequest.addHeader(HttpHeaders.ORIGIN, "http://mydomain2.com");
+		List<String> allowed = Arrays.asList("https://mydomain1.com", "http://mydomain2.com", "http://mydomain3.com");
 		OriginHandshakeInterceptor interceptor = new OriginHandshakeInterceptor(allowed);
 		assertTrue(interceptor.beforeHandshake(request, response, wsHandler, attributes));
 		assertNotEquals(servletResponse.getStatus(), HttpStatus.FORBIDDEN.value());
@@ -87,7 +83,7 @@ public class OriginHandshakeInterceptorTests extends AbstractHttpRequestTests {
 		Map<String, Object> attributes = new HashMap<>();
 		WebSocketHandler wsHandler = Mockito.mock(WebSocketHandler.class);
 		this.servletRequest.addHeader(HttpHeaders.ORIGIN, "http://www.mydomain4.com/");
-		List<String> allowed = Arrays.asList("https://mydomain1.com", "https://mydomain2.com", "http://mydomain3.com");
+		List<String> allowed = Arrays.asList("https://mydomain1.com", "http://mydomain2.com", "http://mydomain3.com");
 		OriginHandshakeInterceptor interceptor = new OriginHandshakeInterceptor(allowed);
 		assertFalse(interceptor.beforeHandshake(request, response, wsHandler, attributes));
 		assertEquals(servletResponse.getStatus(), HttpStatus.FORBIDDEN.value());
@@ -134,7 +130,7 @@ public class OriginHandshakeInterceptorTests extends AbstractHttpRequestTests {
 		WebSocketHandler wsHandler = Mockito.mock(WebSocketHandler.class);
 		this.servletRequest.addHeader(HttpHeaders.ORIGIN, "http://mydomain2.com");
 		this.servletRequest.setServerName("mydomain2.com");
-		OriginHandshakeInterceptor interceptor = new OriginHandshakeInterceptor(Arrays.asList("http://mydomain1.com"));
+		OriginHandshakeInterceptor interceptor = new OriginHandshakeInterceptor(Arrays.asList("https://mydomain1.com"));
 		assertTrue(interceptor.beforeHandshake(request, response, wsHandler, attributes));
 		assertNotEquals(servletResponse.getStatus(), HttpStatus.FORBIDDEN.value());
 	}

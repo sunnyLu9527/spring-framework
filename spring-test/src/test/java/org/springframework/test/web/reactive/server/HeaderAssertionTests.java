@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.test.web.reactive.server;
 
 import java.net.URI;
-import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
@@ -33,16 +32,15 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.http.client.reactive.MockClientHttpRequest;
 import org.springframework.mock.http.client.reactive.MockClientHttpResponse;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link HeaderAssertions}.
+ *
  * @author Rossen Stoyanchev
  * @author Sam Brannen
+ * @since 5.0
  */
 public class HeaderAssertionTests {
 
@@ -81,7 +79,7 @@ public class HeaderAssertionTests {
 	}
 
 	@Test
-	public void valueEqualsWithMultipleValues() {
+	public void valueEqualsWithMultipeValues() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("foo", "bar");
 		headers.add("foo", "baz");
@@ -111,7 +109,7 @@ public class HeaderAssertionTests {
 	@Test
 	public void valueMatches() {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.parseMediaType("application/json;charset=UTF-8"));
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 		HeaderAssertions assertions = headerAssertions(headers);
 
 		// Success
@@ -130,18 +128,9 @@ public class HeaderAssertionTests {
 	}
 
 	@Test
-	public void valueMatcher() {
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("foo", "bar");
-		HeaderAssertions assertions = headerAssertions(headers);
-
-		assertions.value("foo", containsString("a"));
-	}
-
-	@Test
 	public void exists() {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 		HeaderAssertions assertions = headerAssertions(headers);
 
 		// Success
@@ -161,7 +150,7 @@ public class HeaderAssertionTests {
 	@Test
 	public void doesNotExist() {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.parseMediaType("application/json;charset=UTF-8"));
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 		HeaderAssertions assertions = headerAssertions(headers);
 
 		// Success
@@ -260,7 +249,7 @@ public class HeaderAssertionTests {
 		MonoProcessor<byte[]> emptyContent = MonoProcessor.create();
 		emptyContent.onComplete();
 
-		ExchangeResult result = new ExchangeResult(request, response, emptyContent, emptyContent, Duration.ZERO, null);
+		ExchangeResult result = new ExchangeResult(request, response, emptyContent, emptyContent, null);
 		return new HeaderAssertions(result, mock(WebTestClient.ResponseSpec.class));
 	}
 

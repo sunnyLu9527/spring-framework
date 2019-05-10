@@ -91,7 +91,7 @@ public class DefaultUriBuilderFactory implements UriBuilderFactory {
 	@Nullable
 	private final UriComponentsBuilder baseUri;
 
-	private EncodingMode encodingMode = EncodingMode.TEMPLATE_AND_VALUES;
+	private EncodingMode encodingMode = EncodingMode.URI_COMPONENT;
 
 	private final Map<String, Object> defaultUriVariables = new HashMap<>();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,9 +81,7 @@ import org.springframework.util.xml.StaxUtils;
  * @since 3.0
  * @see org.jibx.runtime.IMarshallingContext
  * @see org.jibx.runtime.IUnmarshallingContext
- * @deprecated as of Spring Framework 5.1.5, due to the lack of activity on the JiBX project
  */
-@Deprecated
 public class JibxMarshaller extends AbstractMarshaller implements InitializingBean {
 
 	private static final String DEFAULT_BINDING_NAME = "binding";
@@ -219,15 +217,15 @@ public class JibxMarshaller extends AbstractMarshaller implements InitializingBe
 	public void afterPropertiesSet() throws JiBXException {
 		if (this.targetClass != null) {
 			if (StringUtils.hasLength(this.bindingName)) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Configured for target class [" + this.targetClass +
+				if (logger.isInfoEnabled()) {
+					logger.info("Configured for target class [" + this.targetClass +
 							"] using binding [" + this.bindingName + "]");
 				}
 				this.bindingFactory = BindingDirectory.getFactory(this.bindingName, this.targetClass);
 			}
 			else {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Configured for target class [" + this.targetClass + "]");
+				if (logger.isInfoEnabled()) {
+					logger.info("Configured for target class [" + this.targetClass + "]");
 				}
 				this.bindingFactory = BindingDirectory.getFactory(this.targetClass);
 			}
@@ -236,8 +234,8 @@ public class JibxMarshaller extends AbstractMarshaller implements InitializingBe
 			if (!StringUtils.hasLength(this.bindingName)) {
 				this.bindingName = DEFAULT_BINDING_NAME;
 			}
-			if (logger.isDebugEnabled()) {
-				logger.debug("Configured for target package [" + this.targetPackage +
+			if (logger.isInfoEnabled()) {
+				logger.info("Configured for target package [" + this.targetPackage +
 						"] using binding [" + this.bindingName + "]");
 			}
 			this.bindingFactory = BindingDirectory.getFactory(this.bindingName, this.targetPackage);

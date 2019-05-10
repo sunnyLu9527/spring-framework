@@ -17,7 +17,6 @@
 package org.springframework.jdbc.core.metadata;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -254,7 +253,6 @@ public class TableMetaDataContext {
 					for (Map.Entry<String, ?> entry : inParameters.entrySet()) {
 						if (column.equalsIgnoreCase(entry.getKey())) {
 							value = entry.getValue();
-							break;
 						}
 					}
 				}
@@ -295,8 +293,8 @@ public class TableMetaDataContext {
 		insertStatement.append(") VALUES(");
 		if (columnCount < 1) {
 			if (this.generatedKeyColumnsUsed) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Unable to locate non-key columns for table '" +
+				if (logger.isInfoEnabled()) {
+					logger.info("Unable to locate non-key columns for table '" +
 							getTableName() + "' so an empty insert statement is generated");
 				}
 			}
@@ -305,8 +303,12 @@ public class TableMetaDataContext {
 						getTableName() + "' so an insert statement can't be generated");
 			}
 		}
-		String params = String.join(", ", Collections.nCopies(columnCount, "?"));
-		insertStatement.append(params);
+		for (int i = 0; i < columnCount; i++) {
+			if (i > 0) {
+				insertStatement.append(", ");
+			}
+			insertStatement.append("?");
+		}
 		insertStatement.append(")");
 		return insertStatement.toString();
 	}

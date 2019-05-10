@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import org.springframework.web.server.ServerWebExchange;
  * Resolves method argument value of type {@link java.security.Principal}.
  *
  * @author Rossen Stoyanchev
- * @since 5.2
- * @see ServerWebExchangeMethodArgumentResolver
+ * @since 5.0
+ * @see ServerWebExchangeArgumentResolver
  */
-public class PrincipalMethodArgumentResolver extends HandlerMethodArgumentResolverSupport {
+public class PrincipalArgumentResolver extends HandlerMethodArgumentResolverSupport {
 
-	public PrincipalMethodArgumentResolver(ReactiveAdapterRegistry adapterRegistry) {
+	public PrincipalArgumentResolver(ReactiveAdapterRegistry adapterRegistry) {
 		super(adapterRegistry);
 	}
 

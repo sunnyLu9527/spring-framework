@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import org.springframework.cache.interceptor.CacheEvictOperation;
 import org.springframework.cache.interceptor.CacheOperation;
 import org.springframework.cache.interceptor.CacheableOperation;
 import org.springframework.core.annotation.AliasFor;
 
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Costin Leau
@@ -48,6 +44,9 @@ import static org.junit.Assert.assertTrue;
  * @author Sam Brannen
  */
 public class AnnotationCacheOperationSourceTests {
+
+	@Rule
+	public final ExpectedException exception = ExpectedException.none();
 
 	private final AnnotationCacheOperationSource source = new AnnotationCacheOperationSource();
 
@@ -156,8 +155,8 @@ public class AnnotationCacheOperationSourceTests {
 
 	@Test
 	public void keyAndKeyGeneratorCannotBeSetTogether() {
-		assertThatIllegalStateException().isThrownBy(() ->
-				getOps(AnnotatedClass.class, "invalidKeyAndKeyGeneratorSet"));
+		this.exception.expect(IllegalStateException.class);
+		getOps(AnnotatedClass.class, "invalidKeyAndKeyGeneratorSet");
 	}
 
 	@Test
@@ -190,8 +189,8 @@ public class AnnotationCacheOperationSourceTests {
 
 	@Test
 	public void cacheResolverAndCacheManagerCannotBeSetTogether() {
-		assertThatIllegalStateException().isThrownBy(() ->
-				getOps(AnnotatedClass.class, "invalidCacheResolverAndCacheManagerSet"));
+		this.exception.expect(IllegalStateException.class);
+		getOps(AnnotatedClass.class, "invalidCacheResolverAndCacheManagerSet");
 	}
 
 	@Test

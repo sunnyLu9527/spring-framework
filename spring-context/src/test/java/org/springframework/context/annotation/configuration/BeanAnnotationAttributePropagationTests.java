@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests proving that the various attributes available via the {@link Bean}
@@ -57,16 +54,6 @@ public class BeanAnnotationAttributePropagationTests {
 
 		assertEquals("autowire mode was not propagated",
 				AbstractBeanDefinition.AUTOWIRE_BY_TYPE, beanDef(Config.class).getAutowireMode());
-	}
-
-	@Test
-	public void autowireCandidateMetadataIsPropagated() {
-		@Configuration class Config {
-			@Bean(autowireCandidate=false) Object foo() { return null; }
-		}
-
-		assertFalse("autowire candidate flag was not propagated",
-				beanDef(Config.class).isAutowireCandidate());
 	}
 
 	@Test
