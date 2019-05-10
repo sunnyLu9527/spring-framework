@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Arjen Poutsma
@@ -153,9 +155,7 @@ public class UriTemplateTests {
 		assertEquals("Invalid match", expected, result);
 	}
 
-	// SPR-13627
-
-	@Test
+	@Test // SPR-13627
 	public void matchCustomRegexWithNestedCurlyBraces() throws Exception {
 		UriTemplate template = new UriTemplate("/site.{domain:co.[a-z]{2}}");
 		Map<String, String> result = template.match("/site.co.eu");
@@ -180,6 +180,12 @@ public class UriTemplateTests {
 		assertEquals("Invalid match", expected, result);
 	}
 
+	@Test // SPR-16169
+	public void matchWithMultipleSegmentsAtTheEnd() {
+		UriTemplate template = new UriTemplate("/account/{accountId}");
+		assertFalse(template.matches("/account/15/alias/5"));
+	}
+
 	@Test
 	public void queryVariables() throws Exception {
 		UriTemplate template = new UriTemplate("/search?q={query}");
@@ -195,9 +201,7 @@ public class UriTemplateTests {
 		assertTrue(template.matches("/search?query=foo#bar"));
 	}
 
-	// SPR-13705
-
-	@Test
+	@Test // SPR-13705
 	public void matchesWithSlashAtTheEnd() {
 		UriTemplate uriTemplate = new UriTemplate("/test/");
 		assertTrue(uriTemplate.matches("/test/"));

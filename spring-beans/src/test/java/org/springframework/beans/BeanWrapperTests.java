@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,12 @@ import org.junit.Test;
 
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Specific {@link BeanWrapperImpl} tests.
@@ -49,7 +54,8 @@ public class BeanWrapperTests extends AbstractPropertyAccessorTests {
 		GetterBean target = new GetterBean();
 		BeanWrapper accessor = createAccessor(target);
 		accessor.setPropertyValue("name", "tom");
-		assertTrue("Set name to tom", target.getName().equals("tom"));
+		assertEquals("tom", target.getAliasedName());
+		assertEquals("tom", accessor.getPropertyValue("aliasedName"));
 	}
 
 	@Test
@@ -58,7 +64,8 @@ public class BeanWrapperTests extends AbstractPropertyAccessorTests {
 		BeanWrapper accessor = createAccessor(target);
 		accessor.setExtractOldValueForEditor(true); // This will call the getter
 		accessor.setPropertyValue("name", "tom");
-		assertTrue("Set name to tom", target.getName().equals("tom"));
+		assertEquals("tom", target.getAliasedName());
+		assertEquals("tom", accessor.getPropertyValue("aliasedName"));
 	}
 
 	@Test
@@ -66,7 +73,8 @@ public class BeanWrapperTests extends AbstractPropertyAccessorTests {
 		GetterBean target = new GetterBean();
 		BeanWrapper accessor = createAccessor(target);
 		accessor.setPropertyValue("aliasedName", "tom");
-		assertTrue("Set name to tom", target.getAliasedName().equals("tom"));
+		assertEquals("tom", target.getAliasedName());
+		assertEquals("tom", accessor.getPropertyValue("aliasedName"));
 	}
 
 	@Test
@@ -86,7 +94,7 @@ public class BeanWrapperTests extends AbstractPropertyAccessorTests {
 		catch (PropertyBatchUpdateException ex) {
 			assertTrue("Must contain 2 exceptions", ex.getExceptionCount() == 2);
 			// Test validly set property matches
-			assertTrue("Vaid set property must stick", target.getName().equals(newName));
+			assertTrue("Valid set property must stick", target.getName().equals(newName));
 			assertTrue("Invalid set property must retain old value", target.getAge() == 0);
 			assertTrue("New value of dodgy setter must be available through exception",
 					ex.getPropertyAccessException("touchy").getPropertyChangeEvent().getNewValue().equals(invalidTouchy));
@@ -216,20 +224,24 @@ public class BeanWrapperTests extends AbstractPropertyAccessorTests {
 	}
 
 
-	@SuppressWarnings("unused")
-	private interface AliasedProperty {
-
-		default void setAliasedName(String name) {
-			setName(name);
-		}
+	private interface BaseProperty {
 
 		default String getAliasedName() {
 			return getName();
 		}
 
-		void setName(String name);
-
 		String getName();
+	}
+
+
+	@SuppressWarnings("unused")
+	private interface AliasedProperty extends BaseProperty {
+
+		default void setAliasedName(String name) {
+			setName(name);
+		}
+
+		void setName(String name);
 	}
 
 

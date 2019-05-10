@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,32 +18,33 @@ package org.springframework.web.socket.sockjs.client;
 
 import java.net.URI;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.web.socket.sockjs.transport.TransportType;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@code SockJsUrlInfo}.
+ *
  * @author Rossen Stoyanchev
  */
 public class SockJsUrlInfoTests {
 
-
 	@Test
 	public void serverId() throws Exception {
-		SockJsUrlInfo info = new SockJsUrlInfo(new URI("http://example.com"));
+		SockJsUrlInfo info = new SockJsUrlInfo(new URI("https://example.com"));
 		int serverId = Integer.valueOf(info.getServerId());
 		assertTrue("Invalid serverId: " + serverId, serverId >= 0 && serverId < 1000);
 	}
 
 	@Test
 	public void sessionId() throws Exception {
-		SockJsUrlInfo info = new SockJsUrlInfo(new URI("http://example.com"));
+		SockJsUrlInfo info = new SockJsUrlInfo(new URI("https://example.com"));
 		assertEquals("Invalid sessionId: " + info.getSessionId(), 32, info.getSessionId().length());
 	}
 
@@ -61,7 +62,7 @@ public class SockJsUrlInfoTests {
 
 	private void testInfoUrl(String scheme, String expectedScheme) throws Exception {
 		SockJsUrlInfo info = new SockJsUrlInfo(new URI(scheme + "://example.com"));
-		Assert.assertThat(info.getInfoUrl(), is(equalTo(new URI(expectedScheme + "://example.com/info"))));
+		assertThat(info.getInfoUrl(), is(equalTo(new URI(expectedScheme + "://example.com/info"))));
 	}
 
 	@Test

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.jdbc.core.support;
 
 import java.io.ByteArrayInputStream;
@@ -23,9 +24,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -33,9 +32,14 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test cases for the sql lob value:
@@ -54,9 +58,6 @@ import static org.mockito.BDDMockito.*;
  * @author Alef Arendsen
  */
 public class SqlLobValueTests  {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private PreparedStatement preparedStatement;
 	private LobHandler handler;
@@ -93,8 +94,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void test3() throws SQLException {
 		SqlLobValue lob = new SqlLobValue(new InputStreamReader(new ByteArrayInputStream("Bla".getBytes())), 12);
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test"));
 	}
 
 	@Test
@@ -112,7 +113,7 @@ public class SqlLobValueTests  {
 		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
 		verify(creator).setClobAsAsciiStream(eq(preparedStatement), eq(1), inputStreamCaptor.capture(), eq(3));
 		byte[] bytes = new byte[3];
-		inputStreamCaptor.getValue().read(bytes );
+		inputStreamCaptor.getValue().read(bytes);
 		assertThat(bytes, equalTo(testContent));
 	}
 
@@ -129,8 +130,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void test7() throws SQLException {
 		SqlLobValue lob = new SqlLobValue("bla".getBytes());
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test"));
 	}
 
 	@Test
@@ -190,8 +191,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void testOtherSqlType() throws SQLException {
 		SqlLobValue lob = new SqlLobValue("Bla", handler);
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.SMALLINT, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.SMALLINT, "test"));
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -40,8 +41,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static java.time.Duration.ofMillis;
 import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.springframework.http.MediaType.TEXT_EVENT_STREAM;
 
 /**
@@ -59,26 +62,35 @@ public class ResponseEntityTests {
 
 
 	@Test
-	public void entity() throws Exception {
+	public void entity() {
 		this.client.get().uri("/John")
 				.exchange()
 				.expectStatus().isOk()
-				.expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8)
+				.expectHeader().contentType(MediaType.APPLICATION_JSON)
 				.expectBody(Person.class).isEqualTo(new Person("John"));
 	}
 
 	@Test
-	public void entityWithConsumer() throws Exception {
+	public void entityMatcher() {
 		this.client.get().uri("/John")
 				.exchange()
 				.expectStatus().isOk()
-				.expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8)
+				.expectHeader().contentType(MediaType.APPLICATION_JSON)
+				.expectBody(Person.class).value(Person::getName, startsWith("Joh"));
+	}
+
+	@Test
+	public void entityWithConsumer() {
+		this.client.get().uri("/John")
+				.exchange()
+				.expectStatus().isOk()
+				.expectHeader().contentType(MediaType.APPLICATION_JSON)
 				.expectBody(Person.class)
 				.consumeWith(result -> assertEquals(new Person("John"), result.getResponseBody()));
 	}
 
 	@Test
-	public void entityList() throws Exception {
+	public void entityList() {
 
 		List<Person> expected = Arrays.asList(
 				new Person("Jane"), new Person("Jason"), new Person("John"));
@@ -86,12 +98,24 @@ public class ResponseEntityTests {
 		this.client.get()
 				.exchange()
 				.expectStatus().isOk()
-				.expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8)
+				.expectHeader().contentType(MediaType.APPLICATION_JSON)
 				.expectBodyList(Person.class).isEqualTo(expected);
 	}
 
 	@Test
-	public void entityMap() throws Exception {
+	public void entityListWithConsumer() {
+
+		this.client.get()
+				.exchange()
+				.expectStatus().isOk()
+				.expectHeader().contentType(MediaType.APPLICATION_JSON)
+				.expectBodyList(Person.class).value(people ->
+					MatcherAssert.assertThat(people, hasItem(new Person("Jason")))
+				);
+	}
+
+	@Test
+	public void entityMap() {
 
 		Map<String, Person> map = new LinkedHashMap<>();
 		map.put("Jane", new Person("Jane"));
@@ -105,13 +129,13 @@ public class ResponseEntityTests {
 	}
 
 	@Test
-	public void entityStream() throws Exception {
+	public void entityStream() {
 
 		FluxExchangeResult<Person> result = this.client.get()
 				.accept(TEXT_EVENT_STREAM)
 				.exchange()
 				.expectStatus().isOk()
-				.expectHeader().contentType(TEXT_EVENT_STREAM)
+				.expectHeader().contentTypeCompatibleWith(TEXT_EVENT_STREAM)
 				.returnResult(Person.class);
 
 		StepVerifier.create(result.getResponseBody())
@@ -123,7 +147,7 @@ public class ResponseEntityTests {
 	}
 
 	@Test
-	public void postEntity() throws Exception {
+	public void postEntity() {
 		this.client.post()
 				.syncBody(new Person("John"))
 				.exchange()
@@ -158,7 +182,8 @@ public class ResponseEntityTests {
 
 		@GetMapping(produces = "text/event-stream")
 		Flux<Person> getPersonStream() {
-			return Flux.interval(ofMillis(100)).onBackpressureBuffer(10).map(index -> new Person("N" + index));
+			return Flux.interval(ofMillis(100)).take(50).onBackpressureBuffer(50)
+					.map(index -> new Person("N" + index));
 		}
 
 		@PostMapping

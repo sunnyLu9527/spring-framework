@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
@@ -44,7 +45,7 @@ import static org.junit.Assert.assertEquals;
  * {@code @Configuration} classes.
  *
  * <p>This class has been implemented in response to the following Stack Overflow question:
- * <a href="http://stackoverflow.com/questions/35733344/can-contextconfiguration-in-a-custom-annotation-be-merged">
+ * <a href="https://stackoverflow.com/questions/35733344/can-contextconfiguration-in-a-custom-annotation-be-merged">
  * Can {@code @ContextConfiguration} in a custom annotation be merged?</a>
  *
  * @author Sam Brannen

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.springframework.web.util;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Alef Arendsen
@@ -42,7 +42,7 @@ public class HtmlUtilsTests {
 	public void testHtmlUnescape() {
 		String escaped = "&quot;This is a quote&#39;";
 		String unescaped = HtmlUtils.htmlUnescape(escaped);
-		assertEquals(unescaped, "\"This is a quote'");
+		assertEquals("\"This is a quote'", unescaped);
 	}
 
 	@Test
@@ -114,7 +114,7 @@ public class HtmlUtilsTests {
 		assertEquals("'&Prime;' should be decoded to uni-code character 8243",
 				"" + (char) 8243, HtmlUtils.htmlUnescape("&Prime;"));
 
-		assertEquals("A not supported named reference leads should be ingnored",
+		assertEquals("A not supported named reference leads should be ignored",
 				"&prIme;", HtmlUtils.htmlUnescape("&prIme;"));
 
 		assertEquals("An empty reference '&;' should be survive the decoding",

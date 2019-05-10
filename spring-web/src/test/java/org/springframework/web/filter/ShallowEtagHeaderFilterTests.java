@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,11 @@ import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Arjen Poutsma
@@ -230,7 +234,7 @@ public class ShallowEtagHeaderFilterTests {
 			assertEquals("Invalid request passed", request, filterRequest);
 			response.setContentLength(100);
 			FileCopyUtils.copy(responseBody, filterResponse.getOutputStream());
-			((HttpServletResponse) filterResponse).sendRedirect("http://www.google.com");
+			((HttpServletResponse) filterResponse).sendRedirect("https://www.google.com");
 		};
 		filter.doFilter(request, response, filterChain);
 
@@ -238,7 +242,7 @@ public class ShallowEtagHeaderFilterTests {
 		assertNull("Invalid ETag header", response.getHeader("ETag"));
 		assertEquals("Invalid Content-Length header", 100, response.getContentLength());
 		assertArrayEquals("Invalid content", responseBody, response.getContentAsByteArray());
-		assertEquals("Invalid redirect URL", "http://www.google.com", response.getRedirectedUrl());
+		assertEquals("Invalid redirect URL", "https://www.google.com", response.getRedirectedUrl());
 	}
 
 	// SPR-13717

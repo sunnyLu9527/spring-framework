@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,9 @@ import org.junit.Test;
 
 import org.springframework.mock.web.test.MockHttpServletRequest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Rossen Stoyanchev
@@ -115,9 +117,7 @@ public class PatternsRequestConditionTests {
 		assertEquals("/{foo}", match.getPatterns().iterator().next());
 	}
 
-	// SPR-8410
-
-	@Test
+	@Test // SPR-8410
 	public void matchSuffixPatternUsingFileExtensions() {
 		String[] patterns = new String[] {"/jobs/{jobName}"};
 		List<String> extensions = Arrays.asList("json");
@@ -181,6 +181,19 @@ public class PatternsRequestConditionTests {
 		PatternsRequestCondition match = condition.getMatchingCondition(new MockHttpServletRequest("GET", "/foo.html"));
 
 		assertNull(match);
+	}
+
+	@Test // gh-22543
+	public void matchWithEmptyPatterns() {
+		PatternsRequestCondition condition = new PatternsRequestCondition();
+		assertEquals(new PatternsRequestCondition(""), condition);
+		assertNotNull(condition.getMatchingCondition(new MockHttpServletRequest("GET", "")));
+		assertNull(condition.getMatchingCondition(new MockHttpServletRequest("GET", "/anything")));
+
+		condition = condition.combine(new PatternsRequestCondition());
+		assertEquals(new PatternsRequestCondition(""), condition);
+		assertNotNull(condition.getMatchingCondition(new MockHttpServletRequest("GET", "")));
+		assertNull(condition.getMatchingCondition(new MockHttpServletRequest("GET", "/anything")));
 	}
 
 	@Test

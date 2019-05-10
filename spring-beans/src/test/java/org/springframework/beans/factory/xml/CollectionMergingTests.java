@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,9 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit and integration tests for the collection merging support.
@@ -55,9 +57,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithList");
 		List list = bean.getSomeList();
 		assertEquals("Incorrect size", 3, list.size());
-		assertEquals(list.get(0), "Rob Harrop");
-		assertEquals(list.get(1), "Rod Johnson");
-		assertEquals(list.get(2), "Juergen Hoeller");
+		assertEquals("Rob Harrop", list.get(0));
+		assertEquals("Rod Johnson", list.get(1));
+		assertEquals("Juergen Hoeller", list.get(2));
 	}
 
 	@Test
@@ -98,9 +100,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithMap");
 		Map map = bean.getSomeMap();
 		assertEquals("Incorrect size", 3, map.size());
-		assertEquals(map.get("Rob"), "Sally");
-		assertEquals(map.get("Rod"), "Kerry");
-		assertEquals(map.get("Juergen"), "Eva");
+		assertEquals("Sally", map.get("Rob"));
+		assertEquals("Kerry", map.get("Rod"));
+		assertEquals("Eva", map.get("Juergen"));
 	}
 
 	@Test
@@ -119,9 +121,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithProps");
 		Properties props = bean.getSomeProperties();
 		assertEquals("Incorrect size", 3, props.size());
-		assertEquals(props.getProperty("Rob"), "Sally");
-		assertEquals(props.getProperty("Rod"), "Kerry");
-		assertEquals(props.getProperty("Juergen"), "Eva");
+		assertEquals("Sally", props.getProperty("Rob"));
+		assertEquals("Kerry",props.getProperty("Rod"));
+		assertEquals("Eva", props.getProperty("Juergen"));
 	}
 
 	@Test
@@ -129,9 +131,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithListInConstructor");
 		List list = bean.getSomeList();
 		assertEquals("Incorrect size", 3, list.size());
-		assertEquals(list.get(0), "Rob Harrop");
-		assertEquals(list.get(1), "Rod Johnson");
-		assertEquals(list.get(2), "Juergen Hoeller");
+		assertEquals("Rob Harrop", list.get(0));
+		assertEquals("Rod Johnson", list.get(1));
+		assertEquals("Juergen Hoeller", list.get(2));
 	}
 
 	@Test
@@ -172,9 +174,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithMapInConstructor");
 		Map map = bean.getSomeMap();
 		assertEquals("Incorrect size", 3, map.size());
-		assertEquals(map.get("Rob"), "Sally");
-		assertEquals(map.get("Rod"), "Kerry");
-		assertEquals(map.get("Juergen"), "Eva");
+		assertEquals("Sally", map.get("Rob"));
+		assertEquals("Kerry", map.get("Rod"));
+		assertEquals("Eva", map.get("Juergen"));
 	}
 
 	@Test
@@ -193,9 +195,9 @@ public class CollectionMergingTests {
 		TestBean bean = (TestBean) this.beanFactory.getBean("childWithPropsInConstructor");
 		Properties props = bean.getSomeProperties();
 		assertEquals("Incorrect size", 3, props.size());
-		assertEquals(props.getProperty("Rob"), "Sally");
-		assertEquals(props.getProperty("Rod"), "Kerry");
-		assertEquals(props.getProperty("Juergen"), "Eva");
+		assertEquals("Sally", props.getProperty("Rob"));
+		assertEquals("Kerry", props.getProperty("Rod"));
+		assertEquals("Eva", props.getProperty("Juergen"));
 	}
 
 }

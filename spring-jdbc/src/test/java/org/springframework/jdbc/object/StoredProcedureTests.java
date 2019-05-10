@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,9 +30,7 @@ import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -52,8 +50,16 @@ import org.springframework.jdbc.support.SQLStateSQLExceptionTranslator;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Thomas Risberg
@@ -61,9 +67,6 @@ import static org.mockito.BDDMockito.*;
  * @author Rod Johnson
  */
 public class StoredProcedureTests {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private DataSource dataSource;
 	private Connection connection;
@@ -97,8 +100,8 @@ public class StoredProcedureTests {
 				callableStatement);
 
 		NoSuchStoredProcedure sproc = new NoSuchStoredProcedure(dataSource);
-		thrown.expect(BadSqlGrammarException.class);
-		sproc.execute();
+		assertThatExceptionOfType(BadSqlGrammarException.class).isThrownBy(
+				sproc::execute);
 	}
 
 	private void testAddInvoice(final int amount, final int custid) throws Exception {
@@ -164,8 +167,6 @@ public class StoredProcedureTests {
 	/**
 	 * Confirm no connection was used to get metadata. Does not use superclass replay
 	 * mechanism.
-	 *
-	 * @throws Exception
 	 */
 	@Test
 	public void testStoredProcedureConfiguredViaJdbcTemplateWithCustomExceptionTranslator()
@@ -194,7 +195,7 @@ public class StoredProcedureTests {
 		t.setExceptionTranslator(new SQLStateSQLExceptionTranslator());
 		StoredProcedureConfiguredViaJdbcTemplate sp = new StoredProcedureConfiguredViaJdbcTemplate(t);
 
-		assertEquals(sp.execute(11), 5);
+		assertEquals(5, sp.execute(11));
 		assertEquals(1, t.calls);
 
 		verify(callableStatement).setObject(1, 11, Types.INTEGER);
@@ -203,8 +204,6 @@ public class StoredProcedureTests {
 
 	/**
 	 * Confirm our JdbcTemplate is used
-	 *
-	 * @throws Exception
 	 */
 	@Test
 	public void testStoredProcedureConfiguredViaJdbcTemplate() throws Exception {
@@ -216,7 +215,7 @@ public class StoredProcedureTests {
 		JdbcTemplate t = new JdbcTemplate();
 		t.setDataSource(dataSource);
 		StoredProcedureConfiguredViaJdbcTemplate sp = new StoredProcedureConfiguredViaJdbcTemplate(t);
-		assertEquals(sp.execute(1106), 4);
+		assertEquals(4, sp.execute(1106));
 		verify(callableStatement).setObject(1, 1106, Types.INTEGER);
 		verify(callableStatement).registerOutParameter(2, Types.INTEGER);
 	}
@@ -235,17 +234,16 @@ public class StoredProcedureTests {
 	public void testUnnamedParameter() throws Exception {
 		this.verifyClosedAfter = false;
 		// Shouldn't succeed in creating stored procedure with unnamed parameter
-		thrown.expect(InvalidDataAccessApiUsageException.class);
-		new UnnamedParameterStoredProcedure(dataSource);
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() ->
+		new UnnamedParameterStoredProcedure(dataSource));
 	}
 
 	@Test
 	public void testMissingParameter() throws Exception {
 		this.verifyClosedAfter = false;
 		MissingParameterStoredProcedure mp = new MissingParameterStoredProcedure(dataSource);
-		thrown.expect(InvalidDataAccessApiUsageException.class);
-		mp.execute();
-		fail("Shouldn't succeed in running stored procedure with missing required parameter");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(
+				mp::execute);
 	}
 
 	@Test
@@ -256,8 +254,8 @@ public class StoredProcedureTests {
 		given(connection.prepareCall("{call " + StoredProcedureExceptionTranslator.SQL + "()}")
 				).willReturn(callableStatement);
 		StoredProcedureExceptionTranslator sproc = new StoredProcedureExceptionTranslator(dataSource);
-		thrown.expect(CustomDataException.class);
-		sproc.execute();
+		assertThatExceptionOfType(CustomDataException.class).isThrownBy(
+				sproc::execute);
 	}
 
 	@Test

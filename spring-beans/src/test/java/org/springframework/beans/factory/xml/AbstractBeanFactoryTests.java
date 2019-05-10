@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,11 @@ import org.springframework.tests.sample.beans.MustBeInitialized;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.tests.sample.beans.factory.DummyFactory;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Subclasses must initialize the bean factory and any other variables they need.
@@ -232,7 +236,6 @@ public abstract class AbstractBeanFactoryTests {
 	/**
 	 * Check that we can get the factory bean itself.
 	 * This is only possible if we're dealing with a factory
-	 * @throws Exception
 	 */
 	@Test
 	public void getFactoryItself() throws Exception {
@@ -241,7 +244,6 @@ public abstract class AbstractBeanFactoryTests {
 
 	/**
 	 * Check that afterPropertiesSet gets called on factory
-	 * @throws Exception
 	 */
 	@Test
 	public void factoryIsInitialized() throws Exception {

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,8 +26,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * @author Stephane Nicoll
@@ -39,7 +44,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		HttpComponentsHttpInvokerRequestExecutor executor = new HttpComponentsHttpInvokerRequestExecutor();
 		executor.setConnectTimeout(5000);
 
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		assertEquals(5000, httpPost.getConfig().getConnectTimeout());
 	}
@@ -49,7 +54,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		HttpComponentsHttpInvokerRequestExecutor executor = new HttpComponentsHttpInvokerRequestExecutor();
 		executor.setConnectionRequestTimeout(7000);
 
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		assertEquals(7000, httpPost.getConfig().getConnectionRequestTimeout());
 	}
@@ -59,7 +64,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		HttpComponentsHttpInvokerRequestExecutor executor = new HttpComponentsHttpInvokerRequestExecutor();
 		executor.setReadTimeout(10000);
 
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		assertEquals(10000, httpPost.getConfig().getSocketTimeout());
 	}
@@ -70,11 +75,11 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		CloseableHttpClient client = mock(CloseableHttpClient.class,
 				withSettings().extraInterfaces(Configurable.class));
 		Configurable configurable = (Configurable) client;
-		when(configurable.getConfig()).thenReturn(defaultConfig);
+		given(configurable.getConfig()).willReturn(defaultConfig);
 
 		HttpComponentsHttpInvokerRequestExecutor executor =
 				new HttpComponentsHttpInvokerRequestExecutor(client);
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		assertSame("Default client configuration is expected", defaultConfig, httpPost.getConfig());
 
@@ -93,13 +98,13 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		CloseableHttpClient client = mock(CloseableHttpClient.class,
 				withSettings().extraInterfaces(Configurable.class));
 		Configurable configurable = (Configurable) client;
-		when(configurable.getConfig()).thenReturn(defaultConfig);
+		given(configurable.getConfig()).willReturn(defaultConfig);
 
 		HttpComponentsHttpInvokerRequestExecutor executor =
 				new HttpComponentsHttpInvokerRequestExecutor(client);
 		executor.setConnectTimeout(5000);
 
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		RequestConfig requestConfig = httpPost.getConfig();
 		assertEquals(5000, requestConfig.getConnectTimeout());
@@ -114,7 +119,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		final CloseableHttpClient client = mock(CloseableHttpClient.class,
 				withSettings().extraInterfaces(Configurable.class));
 		Configurable configurable = (Configurable) client;
-		when(configurable.getConfig()).thenReturn(defaultConfig);
+		given(configurable.getConfig()).willReturn(defaultConfig);
 
 		HttpComponentsHttpInvokerRequestExecutor executor =
 				new HttpComponentsHttpInvokerRequestExecutor() {
@@ -124,7 +129,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 					}
 				};
 		executor.setReadTimeout(5000);
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		RequestConfig requestConfig = httpPost.getConfig();
 		assertEquals(-1, requestConfig.getConnectTimeout());
@@ -134,7 +139,7 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 		// Update the Http client so that it returns an updated  config
 		RequestConfig updatedDefaultConfig = RequestConfig.custom()
 				.setConnectTimeout(1234).build();
-		when(configurable.getConfig()).thenReturn(updatedDefaultConfig);
+		given(configurable.getConfig()).willReturn(updatedDefaultConfig);
 		executor.setReadTimeout(7000);
 		HttpPost httpPost2 = executor.createHttpPost(config);
 		RequestConfig requestConfig2 = httpPost2.getConfig();
@@ -153,14 +158,14 @@ public class HttpComponentsHttpInvokerRequestExecutorTests {
 			}
 		};
 
-		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("http://fake-service");
+		HttpInvokerClientConfiguration config = mockHttpInvokerClientConfiguration("https://fake-service");
 		HttpPost httpPost = executor.createHttpPost(config);
 		assertNull("custom request config should not be set", httpPost.getConfig());
 	}
 
 	private HttpInvokerClientConfiguration mockHttpInvokerClientConfiguration(String serviceUrl) {
 		HttpInvokerClientConfiguration config = mock(HttpInvokerClientConfiguration.class);
-		when(config.getServiceUrl()).thenReturn(serviceUrl);
+		given(config.getServiceUrl()).willReturn(serviceUrl);
 		return config;
 	}
 

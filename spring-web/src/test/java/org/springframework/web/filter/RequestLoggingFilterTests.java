@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.web.filter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -32,7 +33,11 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.WebUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for {@link AbstractRequestLoggingFilter} and subclasses.
@@ -101,23 +106,40 @@ public class RequestLoggingFilterTests {
 	}
 
 	@Test
+	public void headers() throws Exception {
+		final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/hotels");
+		request.setContentType("application/json");
+		request.addHeader("token", "123");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		FilterChain filterChain = new NoOpFilterChain();
+		filter.setIncludeHeaders(true);
+		filter.setHeaderPredicate(name -> !name.equalsIgnoreCase("token"));
+		filter.doFilter(request, response, filterChain);
+
+		assertNotNull(filter.beforeRequestMessage);
+		assertEquals("Before request [uri=/hotels;headers=[Content-Type:\"application/json\", token:\"masked\"]]",
+				filter.beforeRequestMessage);
+
+		assertNotNull(filter.afterRequestMessage);
+		assertEquals("After request [uri=/hotels;headers=[Content-Type:\"application/json\", token:\"masked\"]]",
+				filter.afterRequestMessage);
+	}
+
+	@Test
 	public void payloadInputStream() throws Exception {
 		filter.setIncludePayload(true);
 
 		final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/hotels");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
-		final byte[] requestBody = "Hello World".getBytes("UTF-8");
+		final byte[] requestBody = "Hello World".getBytes(StandardCharsets.UTF_8);
 		request.setContent(requestBody);
 
-		FilterChain filterChain = new FilterChain() {
-			@Override
-			public void doFilter(ServletRequest filterRequest, ServletResponse filterResponse)
-					throws IOException, ServletException {
-				((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
-				byte[] buf = FileCopyUtils.copyToByteArray(filterRequest.getInputStream());
-				assertArrayEquals(requestBody, buf);
-			}
+		FilterChain filterChain = (filterRequest, filterResponse) -> {
+			((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
+			byte[] buf = FileCopyUtils.copyToByteArray(filterRequest.getInputStream());
+			assertArrayEquals(requestBody, buf);
 		};
 
 		filter.doFilter(request, response, filterChain);
@@ -134,16 +156,12 @@ public class RequestLoggingFilterTests {
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
 		final String requestBody = "Hello World";
-		request.setContent(requestBody.getBytes("UTF-8"));
+		request.setContent(requestBody.getBytes(StandardCharsets.UTF_8));
 
-		FilterChain filterChain = new FilterChain() {
-			@Override
-			public void doFilter(ServletRequest filterRequest, ServletResponse filterResponse)
-					throws IOException, ServletException {
-				((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
-				String buf = FileCopyUtils.copyToString(filterRequest.getReader());
-				assertEquals(requestBody, buf);
-			}
+		FilterChain filterChain = (filterRequest, filterResponse) -> {
+			((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
+			String buf = FileCopyUtils.copyToString(filterRequest.getReader());
+			assertEquals(requestBody, buf);
 		};
 
 		filter.doFilter(request, response, filterChain);
@@ -160,20 +178,16 @@ public class RequestLoggingFilterTests {
 		final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/hotels");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
-		final byte[] requestBody = "Hello World".getBytes("UTF-8");
+		final byte[] requestBody = "Hello World".getBytes(StandardCharsets.UTF_8);
 		request.setContent(requestBody);
 
-		FilterChain filterChain = new FilterChain() {
-			@Override
-			public void doFilter(ServletRequest filterRequest, ServletResponse filterResponse)
-					throws IOException, ServletException {
-				((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
-				byte[] buf = FileCopyUtils.copyToByteArray(filterRequest.getInputStream());
-				assertArrayEquals(requestBody, buf);
-				ContentCachingRequestWrapper wrapper =
-						WebUtils.getNativeRequest(filterRequest, ContentCachingRequestWrapper.class);
-				assertArrayEquals("Hel".getBytes("UTF-8"), wrapper.getContentAsByteArray());
-			}
+		FilterChain filterChain = (filterRequest, filterResponse) -> {
+			((HttpServletResponse) filterResponse).setStatus(HttpServletResponse.SC_OK);
+			byte[] buf = FileCopyUtils.copyToByteArray(filterRequest.getInputStream());
+			assertArrayEquals(requestBody, buf);
+			ContentCachingRequestWrapper wrapper =
+					WebUtils.getNativeRequest(filterRequest, ContentCachingRequestWrapper.class);
+			assertArrayEquals("Hel".getBytes(StandardCharsets.UTF_8), wrapper.getContentAsByteArray());
 		};
 
 		filter.doFilter(request, response, filterChain);

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +42,7 @@ public abstract class SqlParameterSourceUtils {
 	 * @return an array of {@link SqlParameterSource}
 	 * @see MapSqlParameterSource
 	 * @see BeanPropertySqlParameterSource
-	 * @see NamedParameterJdbcTemplate#batchUpdate(String, SqlParameterSource[]))
+	 * @see NamedParameterJdbcTemplate#batchUpdate(String, SqlParameterSource[])
 	 */
 	@SuppressWarnings("unchecked")
 	public static SqlParameterSource[] createBatch(Object... candidates) {
@@ -58,7 +58,7 @@ public abstract class SqlParameterSourceUtils {
 	 * @since 5.0.2
 	 * @see MapSqlParameterSource
 	 * @see BeanPropertySqlParameterSource
-	 * @see NamedParameterJdbcTemplate#batchUpdate(String, SqlParameterSource[]))
+	 * @see NamedParameterJdbcTemplate#batchUpdate(String, SqlParameterSource[])
 	 */
 	@SuppressWarnings("unchecked")
 	public static SqlParameterSource[] createBatch(Collection<?> candidates) {

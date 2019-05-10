@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,8 +61,16 @@ import org.springframework.tests.sample.beans.SideEffectBean;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.util.SerializationTestUtils;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @since 13.03.2003
@@ -145,7 +153,7 @@ public class ProxyFactoryBeanTests {
 		catch (BeanCreationException ex) {
 			// Root cause of the problem must be an AOP exception
 			AopConfigException aex = (AopConfigException) ex.getCause();
-			assertTrue(aex.getMessage().indexOf("TargetSource") != -1);
+			assertTrue(aex.getMessage().contains("TargetSource"));
 		}
 	}
 
@@ -260,22 +268,22 @@ public class ProxyFactoryBeanTests {
 
 		// Check it works without AOP
 		SideEffectBean raw = (SideEffectBean) bf.getBean("prototypeTarget");
-		assertEquals(INITIAL_COUNT, raw.getCount() );
+		assertEquals(INITIAL_COUNT, raw.getCount());
 		raw.doWork();
-		assertEquals(INITIAL_COUNT+1, raw.getCount() );
+		assertEquals(INITIAL_COUNT+1, raw.getCount());
 		raw = (SideEffectBean) bf.getBean("prototypeTarget");
-		assertEquals(INITIAL_COUNT, raw.getCount() );
+		assertEquals(INITIAL_COUNT, raw.getCount());
 
 		// Now try with advised instances
 		SideEffectBean prototype2FirstInstance = (SideEffectBean) bf.getBean(beanName);
-		assertEquals(INITIAL_COUNT, prototype2FirstInstance.getCount() );
+		assertEquals(INITIAL_COUNT, prototype2FirstInstance.getCount());
 		prototype2FirstInstance.doWork();
-		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount() );
+		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount());
 
 		SideEffectBean prototype2SecondInstance = (SideEffectBean) bf.getBean(beanName);
 		assertFalse("Prototypes are not ==", prototype2FirstInstance == prototype2SecondInstance);
-		assertEquals(INITIAL_COUNT, prototype2SecondInstance.getCount() );
-		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount() );
+		assertEquals(INITIAL_COUNT, prototype2SecondInstance.getCount());
+		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount());
 
 		return prototype2FirstInstance;
 	}
@@ -398,7 +406,7 @@ public class ProxyFactoryBeanTests {
 		config.removeAdvice(debugInterceptor);
 		it.getSpouse();
 
-		// Still invoked wiht old reference
+		// Still invoked with old reference
 		assertEquals(2, debugInterceptor.getCount());
 
 		// not invoked with new object

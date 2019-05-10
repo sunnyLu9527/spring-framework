@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.test.context.BootstrapTestUtils;
 import org.springframework.test.context.ContextConfiguration;
@@ -32,7 +30,7 @@ import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.web.WebDelegatingSmartContextLoader;
 import org.springframework.test.context.web.WebMergedContextConfiguration;
 
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -43,10 +41,6 @@ import static org.junit.Assert.assertNotEquals;
  * @since 3.1
  */
 public class BootstrapTestUtilsMergedConfigTests extends AbstractContextConfigurationUtilsTests {
-
-	@Rule
-	public final ExpectedException exception = ExpectedException.none();
-
 
 	@Test
 	public void buildImplicitMergedConfigWithoutAnnotation() {
@@ -61,11 +55,10 @@ public class BootstrapTestUtilsMergedConfigTests extends AbstractContextConfigur
 	 */
 	@Test
 	public void buildMergedConfigWithContextConfigurationWithoutLocationsClassesOrInitializers() {
-		exception.expect(IllegalStateException.class);
-		exception.expectMessage(startsWith("DelegatingSmartContextLoader was unable to detect defaults, "
-				+ "and no ApplicationContextInitializers or ContextCustomizers were declared for context configuration attributes"));
-
-		buildMergedContextConfiguration(MissingContextAttributesTestCase.class);
+		assertThatIllegalStateException().isThrownBy(() ->
+				buildMergedContextConfiguration(MissingContextAttributesTestCase.class))
+			.withMessageStartingWith("DelegatingSmartContextLoader was unable to detect defaults, "
+					+ "and no ApplicationContextInitializers or ContextCustomizers were declared for context configuration attributes");
 	}
 
 	@Test
@@ -122,7 +115,7 @@ public class BootstrapTestUtilsMergedConfigTests extends AbstractContextConfigur
 
 	/**
 	 * Introduced to investigate claims made in a discussion on
-	 * <a href="http://stackoverflow.com/questions/24725438/what-could-cause-a-class-implementing-applicationlistenercontextrefreshedevent">Stack Overflow</a>.
+	 * <a href="https://stackoverflow.com/questions/24725438/what-could-cause-a-class-implementing-applicationlistenercontextrefreshedevent">Stack Overflow</a>.
 	 */
 	@Test
 	public void buildMergedConfigWithAtWebAppConfigurationWithAnnotationAndClassesOnSuperclass() {

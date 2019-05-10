@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.aopalliance.intercept.MethodInvocation;
-
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -47,7 +46,11 @@ import org.springframework.remoting.support.RemoteInvocationResult;
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Juergen Hoeller
@@ -75,13 +78,13 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 
 		pfb.setHttpInvokerRequestExecutor(new AbstractHttpInvokerRequestExecutor() {
 			@Override
 			protected RemoteInvocationResult doExecuteRequest(
 					HttpInvokerClientConfiguration config, ByteArrayOutputStream baos) throws Exception {
-				assertEquals("http://myurl", config.getServiceUrl());
+				assertEquals("https://myurl", config.getServiceUrl());
 				MockHttpServletRequest request = new MockHttpServletRequest();
 				MockHttpServletResponse response = new MockHttpServletResponse();
 				request.setContent(baos.toByteArray());
@@ -142,7 +145,7 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 
 		pfb.setHttpInvokerRequestExecutor(new HttpInvokerRequestExecutor() {
 			@Override
@@ -195,14 +198,14 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 
 		pfb.setHttpInvokerRequestExecutor(new AbstractHttpInvokerRequestExecutor() {
 			@Override
 			protected RemoteInvocationResult doExecuteRequest(
 					HttpInvokerClientConfiguration config, ByteArrayOutputStream baos)
 					throws IOException, ClassNotFoundException {
-				assertEquals("http://myurl", config.getServiceUrl());
+				assertEquals("https://myurl", config.getServiceUrl());
 				MockHttpServletRequest request = new MockHttpServletRequest();
 				request.addHeader("Compression", "gzip");
 				MockHttpServletResponse response = new MockHttpServletResponse();
@@ -276,13 +279,13 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 
 		pfb.setHttpInvokerRequestExecutor(new AbstractHttpInvokerRequestExecutor() {
 			@Override
 			protected RemoteInvocationResult doExecuteRequest(
 					HttpInvokerClientConfiguration config, ByteArrayOutputStream baos) throws Exception {
-				assertEquals("http://myurl", config.getServiceUrl());
+				assertEquals("https://myurl", config.getServiceUrl());
 				MockHttpServletRequest request = new MockHttpServletRequest();
 				MockHttpServletResponse response = new MockHttpServletResponse();
 				request.setContent(baos.toByteArray());
@@ -351,7 +354,7 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 		pfb.setRemoteInvocationFactory(new RemoteInvocationFactory() {
 			@Override
 			public RemoteInvocation createRemoteInvocation(MethodInvocation methodInvocation) {
@@ -376,7 +379,7 @@ public class HttpInvokerTests {
 			@Override
 			protected RemoteInvocationResult doExecuteRequest(
 					HttpInvokerClientConfiguration config, ByteArrayOutputStream baos) throws Exception {
-				assertEquals("http://myurl", config.getServiceUrl());
+				assertEquals("https://myurl", config.getServiceUrl());
 				MockHttpServletRequest request = new MockHttpServletRequest();
 				MockHttpServletResponse response = new MockHttpServletResponse();
 				request.setContent(baos.toByteArray());
@@ -413,7 +416,7 @@ public class HttpInvokerTests {
 
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
-		pfb.setServiceUrl("http://myurl");
+		pfb.setServiceUrl("https://myurl");
 		pfb.setRemoteInvocationFactory(new RemoteInvocationFactory() {
 			@Override
 			public RemoteInvocation createRemoteInvocation(MethodInvocation methodInvocation) {
@@ -428,7 +431,7 @@ public class HttpInvokerTests {
 			@Override
 			protected RemoteInvocationResult doExecuteRequest(
 					HttpInvokerClientConfiguration config, ByteArrayOutputStream baos) throws Exception {
-				assertEquals("http://myurl", config.getServiceUrl());
+				assertEquals("https://myurl", config.getServiceUrl());
 				MockHttpServletRequest request = new MockHttpServletRequest();
 				MockHttpServletResponse response = new MockHttpServletResponse();
 				request.setContent(baos.toByteArray());
@@ -446,7 +449,7 @@ public class HttpInvokerTests {
 
 	@Test
 	public void httpInvokerWithSpecialLocalMethods() throws Exception {
-		String serviceUrl = "http://myurl";
+		String serviceUrl = "https://myurl";
 		HttpInvokerProxyFactoryBean pfb = new HttpInvokerProxyFactoryBean();
 		pfb.setServiceInterface(ITestBean.class);
 		pfb.setServiceUrl(serviceUrl);
@@ -463,8 +466,8 @@ public class HttpInvokerTests {
 		ITestBean proxy = (ITestBean) pfb.getObject();
 
 		// shouldn't go through to remote service
-		assertTrue(proxy.toString().indexOf("HTTP invoker") != -1);
-		assertTrue(proxy.toString().indexOf(serviceUrl) != -1);
+		assertTrue(proxy.toString().contains("HTTP invoker"));
+		assertTrue(proxy.toString().contains(serviceUrl));
 		assertEquals(proxy.hashCode(), proxy.hashCode());
 		assertTrue(proxy.equals(proxy));
 

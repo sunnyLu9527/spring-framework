@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,9 +15,6 @@
  */
 
 package org.springframework.messaging.simp.user;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 import java.security.Principal;
 
@@ -29,8 +26,12 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.TestPrincipal;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for
@@ -51,7 +52,7 @@ public class DefaultUserDestinationResolverTests {
 		simpUser.addSessions(new TestSimpSession("123"));
 
 		this.registry = mock(SimpUserRegistry.class);
-		when(this.registry.getUser("joe")).thenReturn(simpUser);
+		given(this.registry.getUser("joe")).willReturn(simpUser);
 
 		this.resolver = new DefaultUserDestinationResolver(this.registry);
 	}
@@ -73,9 +74,7 @@ public class DefaultUserDestinationResolverTests {
 
 	@Test // SPR-14044
 	public void handleSubscribeForDestinationWithoutLeadingSlash() {
-		AntPathMatcher pathMatcher = new AntPathMatcher();
-		pathMatcher.setPathSeparator(".");
-		this.resolver.setPathMatcher(pathMatcher);
+		this.resolver.setRemoveLeadingSlash(true);
 
 		TestPrincipal user = new TestPrincipal("joe");
 		String destination = "/user/jms.queue.call";
@@ -92,7 +91,7 @@ public class DefaultUserDestinationResolverTests {
 
 		TestSimpUser simpUser = new TestSimpUser("joe");
 		simpUser.addSessions(new TestSimpSession("123"), new TestSimpSession("456"));
-		when(this.registry.getUser("joe")).thenReturn(simpUser);
+		given(this.registry.getUser("joe")).willReturn(simpUser);
 
 		TestPrincipal user = new TestPrincipal("joe");
 		Message<?> message = createMessage(SimpMessageType.SUBSCRIBE, user, "456", "/user/queue/foo");
@@ -141,9 +140,7 @@ public class DefaultUserDestinationResolverTests {
 
 	@Test // SPR-14044
 	public void handleMessageForDestinationWithDotSeparator() {
-		AntPathMatcher pathMatcher = new AntPathMatcher();
-		pathMatcher.setPathSeparator(".");
-		this.resolver.setPathMatcher(pathMatcher);
+		this.resolver.setRemoveLeadingSlash(true);
 
 		TestPrincipal user = new TestPrincipal("joe");
 		String destination = "/user/joe/jms.queue.call";
@@ -160,7 +157,7 @@ public class DefaultUserDestinationResolverTests {
 
 		TestSimpUser otherSimpUser = new TestSimpUser("anna");
 		otherSimpUser.addSessions(new TestSimpSession("456"));
-		when(this.registry.getUser("anna")).thenReturn(otherSimpUser);
+		given(this.registry.getUser("anna")).willReturn(otherSimpUser);
 
 		TestPrincipal user = new TestPrincipal("joe");
 		TestPrincipal otherUser = new TestPrincipal("anna");
@@ -178,11 +175,11 @@ public class DefaultUserDestinationResolverTests {
 
 	@Test
 	public void handleMessageEncodedUserName() {
-		String userName = "http://joe.openid.example.org/";
+		String userName = "https://joe.openid.example.org/";
 
 		TestSimpUser simpUser = new TestSimpUser(userName);
 		simpUser.addSessions(new TestSimpSession("openid123"));
-		when(this.registry.getUser(userName)).thenReturn(simpUser);
+		given(this.registry.getUser(userName)).willReturn(simpUser);
 
 		String destination = "/user/" + StringUtils.replace(userName, "/", "%2F") + "/queue/foo";
 

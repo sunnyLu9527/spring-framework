@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,11 @@
 
 package org.springframework.web.reactive.resource;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
@@ -42,8 +44,9 @@ public class ContentVersionStrategy extends AbstractFileNameVersionStrategy {
 
 	@Override
 	public Mono<String> getResourceVersion(Resource resource) {
-		return DataBufferUtils.read(resource, dataBufferFactory, StreamUtils.BUFFER_SIZE)
-				.reduce(DataBufferUtils.writeAggregator())
+		Flux<DataBuffer> flux =
+				DataBufferUtils.read(resource, dataBufferFactory, StreamUtils.BUFFER_SIZE);
+		return DataBufferUtils.join(flux)
 				.map(buffer -> {
 					byte[] result = new byte[buffer.readableByteCount()];
 					buffer.read(result);

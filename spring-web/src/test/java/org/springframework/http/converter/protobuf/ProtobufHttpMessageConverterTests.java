@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.http.converter.protobuf;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import org.junit.Before;
@@ -30,8 +31,15 @@ import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.protobuf.Msg;
 import org.springframework.protobuf.SecondMsg;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test suite for {@link ProtobufHttpMessageConverter}.
@@ -39,10 +47,14 @@ import static org.mockito.Mockito.*;
  * @author Alex Antonov
  * @author Juergen Hoeller
  * @author Andreas Ahlenstorf
+ * @author Sebastien Deleuze
  */
+@SuppressWarnings("deprecation")
 public class ProtobufHttpMessageConverterTests {
 
 	private ProtobufHttpMessageConverter converter;
+
+	private ExtensionRegistry extensionRegistry;
 
 	private ExtensionRegistryInitializer registryInitializer;
 
@@ -52,6 +64,7 @@ public class ProtobufHttpMessageConverterTests {
 	@Before
 	public void setup() {
 		this.registryInitializer = mock(ExtensionRegistryInitializer.class);
+		this.extensionRegistry = mock(ExtensionRegistry.class);
 		this.converter = new ProtobufHttpMessageConverter(this.registryInitializer);
 		this.testMsg = Msg.newBuilder().setFoo("Foo").setBlah(SecondMsg.newBuilder().setBlah(123).build()).build();
 	}
@@ -59,12 +72,19 @@ public class ProtobufHttpMessageConverterTests {
 
 	@Test
 	public void extensionRegistryInitialized() {
-	    verify(this.registryInitializer, times(1)).initializeExtensionRegistry(any());
+		verify(this.registryInitializer, times(1)).initializeExtensionRegistry(any());
+	}
+
+	@Test
+	public void extensionRegistryInitializerNull() {
+		ProtobufHttpMessageConverter converter = new ProtobufHttpMessageConverter((ExtensionRegistryInitializer)null);
+		assertNotNull(converter.extensionRegistry);
 	}
 
 	@Test
 	public void extensionRegistryNull() {
-		new ProtobufHttpMessageConverter(null);
+		ProtobufHttpMessageConverter converter = new ProtobufHttpMessageConverter((ExtensionRegistry)null);
+		assertNotNull(converter.extensionRegistry);
 	}
 
 	@Test
@@ -128,9 +148,9 @@ public class ProtobufHttpMessageConverterTests {
 	public void writeJsonWithGoogleProtobuf() throws IOException {
 		this.converter = new ProtobufHttpMessageConverter(
 				new ProtobufHttpMessageConverter.ProtobufJavaUtilSupport(null, null),
-				this.registryInitializer);
+				this.extensionRegistry);
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
-		MediaType contentType = MediaType.APPLICATION_JSON_UTF8;
+		MediaType contentType = MediaType.APPLICATION_JSON;
 		this.converter.write(this.testMsg, contentType, outputMessage);
 
 		assertEquals(contentType, outputMessage.getHeaders().getContentType());
@@ -152,7 +172,7 @@ public class ProtobufHttpMessageConverterTests {
 	public void writeJsonWithJavaFormat() throws IOException {
 		this.converter = new ProtobufHttpMessageConverter(
 				new ProtobufHttpMessageConverter.ProtobufJavaFormatSupport(),
-				this.registryInitializer);
+				this.extensionRegistry);
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		MediaType contentType = MediaType.APPLICATION_JSON_UTF8;
 		this.converter.write(this.testMsg, contentType, outputMessage);

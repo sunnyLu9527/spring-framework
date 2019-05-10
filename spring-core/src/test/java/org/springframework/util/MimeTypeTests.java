@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
  * @author Arjen Poutsma
  * @author Juergen Hoeller
  * @author Sam Brannen
+ * @author Dimitrios Liapis
  */
 public class MimeTypeTests {
 
@@ -74,7 +75,7 @@ public class MimeTypeTests {
 	}
 
 	@Test
-	public void parseCharset() throws Exception {
+	public void parseCharset() {
 		String s = "text/html; charset=iso-8859-1";
 		MimeType mimeType = MimeType.valueOf(s);
 		assertEquals("Invalid type", "text", mimeType.getType());
@@ -93,12 +94,12 @@ public class MimeTypeTests {
 
 	@Test
 	public void parseQuotedSeparator() {
-		String s = "application/xop+xml;charset=utf-8;type=\"application/soap+xml;action=\\\"http://x.y.z\\\"\"";
+		String s = "application/xop+xml;charset=utf-8;type=\"application/soap+xml;action=\\\"https://x.y.z\\\"\"";
 		MimeType mimeType = MimeType.valueOf(s);
 		assertEquals("Invalid type", "application", mimeType.getType());
 		assertEquals("Invalid subtype", "xop+xml", mimeType.getSubtype());
 		assertEquals("Invalid charset", StandardCharsets.UTF_8, mimeType.getCharset());
-		assertEquals("\"application/soap+xml;action=\\\"http://x.y.z\\\"\"", mimeType.getParameter("type"));
+		assertEquals("\"application/soap+xml;action=\\\"https://x.y.z\\\"\"", mimeType.getParameter("type"));
 	}
 
 	@Test
@@ -110,7 +111,7 @@ public class MimeTypeTests {
 	}
 
 	@Test
-	public void includes() throws Exception {
+	public void includes() {
 		MimeType textPlain = MimeTypeUtils.TEXT_PLAIN;
 		assertTrue("Equal types is not inclusive", textPlain.includes(textPlain));
 		MimeType allText = new MimeType("text");
@@ -140,7 +141,7 @@ public class MimeTypeTests {
 	}
 
 	@Test
-	public void isCompatible() throws Exception {
+	public void isCompatible() {
 		MimeType textPlain = MimeTypeUtils.TEXT_PLAIN;
 		assertTrue("Equal types is not compatible", textPlain.isCompatibleWith(textPlain));
 		MimeType allText = new MimeType("text");
@@ -170,14 +171,14 @@ public class MimeTypeTests {
 	}
 
 	@Test
-	public void testToString() throws Exception {
+	public void testToString() {
 		MimeType mimeType = new MimeType("text", "plain");
 		String result = mimeType.toString();
 		assertEquals("Invalid toString() returned", "text/plain", result);
 	}
 
 	@Test
-	public void parseMimeType() throws Exception {
+	public void parseMimeType() {
 		String s = "audio/*";
 		MimeType mimeType = MimeTypeUtils.parseMimeType(s);
 		assertEquals("Invalid type", "audio", mimeType.getType());
@@ -210,7 +211,7 @@ public class MimeTypeTests {
 	}
 
 	@Test(expected = InvalidMimeTypeException.class)
-	public void parseMimeTypeMissingTypeAndSubtype() throws Exception {
+	public void parseMimeTypeMissingTypeAndSubtype() {
 		MimeTypeUtils.parseMimeType("     ;a=b");
 	}
 
@@ -239,22 +240,28 @@ public class MimeTypeTests {
 		MimeTypeUtils.parseMimeType("text/html; charset=foo-bar");
 	}
 
-	/**
-	 * SPR-8917
-	 */
-	@Test
+	@Test  // SPR-8917
 	public void parseMimeTypeQuotedParameterValue() {
 		MimeType mimeType = MimeTypeUtils.parseMimeType("audio/*;attr=\"v>alue\"");
 		assertEquals("\"v>alue\"", mimeType.getParameter("attr"));
 	}
 
-	/**
-	 * SPR-8917
-	 */
-	@Test
+	@Test  // SPR-8917
 	public void parseMimeTypeSingleQuotedParameterValue() {
 		MimeType mimeType = MimeTypeUtils.parseMimeType("audio/*;attr='v>alue'");
 		assertEquals("'v>alue'", mimeType.getParameter("attr"));
+	}
+
+	@Test // SPR-16630
+	public void parseMimeTypeWithSpacesAroundEquals() {
+		MimeType mimeType = MimeTypeUtils.parseMimeType("multipart/x-mixed-replace;boundary = --myboundary");
+		assertEquals("--myboundary", mimeType.getParameter("boundary"));
+	}
+
+	@Test // SPR-16630
+	public void parseMimeTypeWithSpacesAroundEqualsAndQuotedValue() {
+		MimeType mimeType = MimeTypeUtils.parseMimeType("text/plain; foo = \" bar \" ");
+		assertEquals("\" bar \"", mimeType.getParameter("foo"));
 	}
 
 	@Test(expected = InvalidMimeTypeException.class)
@@ -263,7 +270,7 @@ public class MimeTypeTests {
 	}
 
 	@Test
-	public void parseMimeTypes() throws Exception {
+	public void parseMimeTypes() {
 		String s = "text/plain, text/html, text/x-dvi, text/x-c";
 		List<MimeType> mimeTypes = MimeTypeUtils.parseMimeTypes(s);
 		assertNotNull("No mime types returned", mimeTypes);
@@ -272,6 +279,25 @@ public class MimeTypeTests {
 		mimeTypes = MimeTypeUtils.parseMimeTypes(null);
 		assertNotNull("No mime types returned", mimeTypes);
 		assertEquals("Invalid amount of mime types", 0, mimeTypes.size());
+	}
+
+	@Test // SPR-17459
+	public void parseMimeTypesWithQuotedParameters() {
+		testWithQuotedParameters("foo/bar;param=\",\"");
+		testWithQuotedParameters("foo/bar;param=\"s,a,\"");
+		testWithQuotedParameters("foo/bar;param=\"s,\"", "text/x-c");
+		testWithQuotedParameters("foo/bar;param=\"a\\\"b,c\"");
+		testWithQuotedParameters("foo/bar;param=\"\\\\\"");
+		testWithQuotedParameters("foo/bar;param=\"\\,\\\"");
+	}
+
+	private void testWithQuotedParameters(String... mimeTypes) {
+		String s = String.join(",", mimeTypes);
+		List<MimeType> actual = MimeTypeUtils.parseMimeTypes(s);
+		assertEquals(mimeTypes.length, actual.size());
+		for (int i=0; i < mimeTypes.length; i++) {
+			assertEquals(mimeTypes[i], actual.get(i).toString());
+		}
 	}
 
 	@Test
@@ -335,6 +361,8 @@ public class MimeTypeTests {
 		MimeType m2 = new MimeType("text", "plain", singletonMap("charset", "utf-8"));
 		assertEquals(m1, m2);
 		assertEquals(m2, m1);
+		assertEquals(0, m1.compareTo(m2));
+		assertEquals(0, m2.compareTo(m1));
 	}
 
 }

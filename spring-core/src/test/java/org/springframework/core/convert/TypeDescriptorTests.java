@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,8 +42,16 @@ import org.springframework.core.MethodParameter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for {@link TypeDescriptor}.
@@ -166,6 +174,13 @@ public class TypeDescriptorTests {
 		assertNotNull(t1.getAnnotation(ParameterAnnotation.class));
 		assertTrue(t1.hasAnnotation(ParameterAnnotation.class));
 		assertEquals(123, t1.getAnnotation(ParameterAnnotation.class).value());
+	}
+
+	@Test
+	public void getAnnotationsReturnsClonedArray() throws Exception {
+		TypeDescriptor t = new TypeDescriptor(new MethodParameter(getClass().getMethod("testAnnotatedMethod", String.class), 0));
+		t.getAnnotations()[0] = null;
+		assertNotNull(t.getAnnotations()[0]);
 	}
 
 	@Test
@@ -516,7 +531,7 @@ public class TypeDescriptorTests {
 	@Test
 	public void narrow() {
 		TypeDescriptor desc = TypeDescriptor.valueOf(Number.class);
-		Integer value = new Integer(3);
+		Integer value = Integer.valueOf(3);
 		desc = desc.narrow(value);
 		assertEquals(Integer.class, desc.getType());
 	}
@@ -524,7 +539,7 @@ public class TypeDescriptorTests {
 	@Test
 	public void elementType() {
 		TypeDescriptor desc = TypeDescriptor.valueOf(List.class);
-		Integer value = new Integer(3);
+		Integer value = Integer.valueOf(3);
 		desc = desc.elementTypeDescriptor(value);
 		assertEquals(Integer.class, desc.getType());
 	}
@@ -542,7 +557,7 @@ public class TypeDescriptorTests {
 	@Test
 	public void mapKeyType() {
 		TypeDescriptor desc = TypeDescriptor.valueOf(Map.class);
-		Integer value = new Integer(3);
+		Integer value = Integer.valueOf(3);
 		desc = desc.getMapKeyTypeDescriptor(value);
 		assertEquals(Integer.class, desc.getType());
 	}
@@ -560,7 +575,7 @@ public class TypeDescriptorTests {
 	@Test
 	public void mapValueType() {
 		TypeDescriptor desc = TypeDescriptor.valueOf(Map.class);
-		Integer value = new Integer(3);
+		Integer value = Integer.valueOf(3);
 		desc = desc.getMapValueTypeDescriptor(value);
 		assertEquals(Integer.class, desc.getType());
 	}

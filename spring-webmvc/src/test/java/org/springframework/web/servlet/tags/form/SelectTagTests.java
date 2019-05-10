@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,6 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
-
 import org.junit.Test;
 
 import org.springframework.beans.propertyeditors.CustomCollectionEditor;
@@ -49,7 +48,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.support.BindStatus;
 import org.springframework.web.servlet.tags.TransformTag;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Rob Harrop
@@ -677,7 +681,7 @@ public class SelectTagTests extends AbstractFormTagTests {
 
 	/**
 	 * Tests new support added as a result of <a
-	 * href="http://opensource.atlassian.com/projects/spring/browse/SPR-2660"
+	 * href="https://opensource.atlassian.com/projects/spring/browse/SPR-2660"
 	 * target="_blank">SPR-2660</a>.
 	 * <p>
 	 * Specifically, if the {@code items} attribute is supplied a

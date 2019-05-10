@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,9 +27,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-import static org.springframework.test.context.support.TestPropertySourceUtils.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
+import static org.springframework.test.context.support.TestPropertySourceUtils.INLINED_PROPERTIES_PROPERTY_SOURCE_NAME;
 
 /**
  * Integration tests for {@link TestPropertySource @TestPropertySource} support with
@@ -41,7 +42,7 @@ import static org.springframework.test.context.support.TestPropertySourceUtils.*
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 @TestPropertySource(properties = { "", "foo = bar", "baz quux", "enigma: 42", "x.y.z = a=b=c",
-	"server.url = http://example.com", "key.value.1: key=value", "key.value.2 key=value", "key.value.3 key:value" })
+	"server.url = https://example.com", "key.value.1: key=value", "key.value.2 key=value", "key.value.3 key:value" })
 public class InlinedPropertiesTestPropertySourceTests {
 
 	@Autowired
@@ -61,7 +62,7 @@ public class InlinedPropertiesTestPropertySourceTests {
 
 		// Values containing key/value delimiters (":", "=", " ")
 		assertThat(property("x.y.z"), is("a=b=c"));
-		assertThat(property("server.url"), is("http://example.com"));
+		assertThat(property("server.url"), is("https://example.com"));
 		assertThat(property("key.value.1"), is("key=value"));
 		assertThat(property("key.value.2"), is("key=value"));
 		assertThat(property("key.value.3"), is("key:value"));

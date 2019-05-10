@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.servlet.config;
 
 import java.util.List;
 
 import org.hamcrest.Matchers;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -50,22 +50,23 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ServletWebArgumentResolverAdapter;
 import org.springframework.web.util.UrlPathHelper;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test fixture for the configuration in mvc-config-annotation-driven.xml.
+ *
  * @author Rossen Stoyanchev
  * @author Brian Clozel
  * @author Agim Emruli
  */
 public class AnnotationDrivenBeanDefinitionParserTests {
 
-	private GenericWebApplicationContext appContext;
-
-	@Before
-	public void setup() {
-		this.appContext = new GenericWebApplicationContext();
-	}
+	private final GenericWebApplicationContext appContext = new GenericWebApplicationContext();
 
 	@Test
 	public void testMessageCodesResolver() {
@@ -191,7 +192,7 @@ public class AnnotationDrivenBeanDefinitionParserTests {
 		Object value = new DirectFieldAccessor(bean).getPropertyValue("responseBodyAdvice");
 		assertNotNull(value);
 		assertTrue(value instanceof List);
-		List<ResponseBodyAdvice> converters = (List<ResponseBodyAdvice>) value;
+		List<ResponseBodyAdvice<?>> converters = (List<ResponseBodyAdvice<?>>) value;
 		assertTrue(converters.get(0) instanceof JsonViewResponseBodyAdvice);
 	}
 
@@ -201,7 +202,7 @@ public class AnnotationDrivenBeanDefinitionParserTests {
 		Object value = new DirectFieldAccessor(bean).getPropertyValue("requestResponseBodyAdvice");
 		assertNotNull(value);
 		assertTrue(value instanceof List);
-		List<ResponseBodyAdvice> converters = (List<ResponseBodyAdvice>) value;
+		List<ResponseBodyAdvice<?>> converters = (List<ResponseBodyAdvice<?>>) value;
 		assertTrue(converters.get(0) instanceof JsonViewRequestBodyAdvice);
 		assertTrue(converters.get(1) instanceof JsonViewResponseBodyAdvice);
 	}

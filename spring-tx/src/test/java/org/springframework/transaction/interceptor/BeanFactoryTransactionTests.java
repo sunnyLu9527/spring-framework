@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,9 +42,13 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Test cases for AOP transaction management.
@@ -67,7 +71,7 @@ public class BeanFactoryTransactionTests {
 
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory1() throws NoSuchMethodException {
+	public void testGetsAreNotTransactionalWithProxyFactory1() {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory1");
 		assertTrue("testBean is a dynamic proxy", Proxy.isProxyClass(testBean.getClass()));
 		assertFalse(testBean instanceof TransactionalProxy);
@@ -75,7 +79,7 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory2DynamicProxy() throws NoSuchMethodException {
+	public void testGetsAreNotTransactionalWithProxyFactory2DynamicProxy() {
 		this.factory.preInstantiateSingletons();
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2DynamicProxy");
 		assertTrue("testBean is a dynamic proxy", Proxy.isProxyClass(testBean.getClass()));
@@ -84,7 +88,7 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory2Cglib() throws NoSuchMethodException {
+	public void testGetsAreNotTransactionalWithProxyFactory2Cglib() {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2Cglib");
 		assertTrue("testBean is CGLIB advised", AopUtils.isCglibProxy(testBean));
 		assertTrue(testBean instanceof TransactionalProxy);
@@ -92,7 +96,7 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testProxyFactory2Lazy() throws NoSuchMethodException {
+	public void testProxyFactory2Lazy() {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2Lazy");
 		assertFalse(factory.containsSingleton("target"));
 		assertEquals(666, testBean.getAge());
@@ -100,7 +104,7 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testCglibTransactionProxyImplementsNoInterfaces() throws NoSuchMethodException {
+	public void testCglibTransactionProxyImplementsNoInterfaces() {
 		ImplementsNoInterfaces ini = (ImplementsNoInterfaces) factory.getBean("cglibNoInterfaces");
 		assertTrue("testBean is CGLIB advised", AopUtils.isCglibProxy(ini));
 		assertTrue(ini instanceof TransactionalProxy);
@@ -116,7 +120,7 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory3() throws NoSuchMethodException {
+	public void testGetsAreNotTransactionalWithProxyFactory3() {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory3");
 		assertTrue("testBean is a full proxy", testBean instanceof DerivedTestBean);
 		assertTrue(testBean instanceof TransactionalProxy);
@@ -202,7 +206,7 @@ public class BeanFactoryTransactionTests {
 	 * Test that we can set the target to a dynamic TargetSource.
 	 */
 	@Test
-	public void testDynamicTargetSource() throws NoSuchMethodException {
+	public void testDynamicTargetSource() {
 		// Install facade
 		CallCountingTransactionManager txMan = new CallCountingTransactionManager();
 		PlatformTransactionManagerFacade.delegate = txMan;

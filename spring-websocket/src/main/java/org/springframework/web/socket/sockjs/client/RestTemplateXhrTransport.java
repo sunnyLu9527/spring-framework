@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -152,7 +152,7 @@ public class RestTemplateXhrTransport extends AbstractXhrTransport {
 	/**
 	 * A simple ResponseExtractor that reads the body into a String.
 	 */
-	private final static ResponseExtractor<ResponseEntity<String>> textResponseExtractor =
+	private static final ResponseExtractor<ResponseEntity<String>> textResponseExtractor =
 			response -> {
 				String body = StreamUtils.copyToString(response.getBody(), SockJsFrame.CHARSET);
 				return ResponseEntity.status(response.getRawStatusCode()).headers(response.getHeaders()).body(body);

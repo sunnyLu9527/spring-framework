@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.reactive.resource;
 
 import java.time.Duration;
@@ -33,16 +34,16 @@ import org.springframework.mock.http.server.reactive.test.MockServerHttpRequest;
 import org.springframework.mock.web.test.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.mock;
-import static org.mockito.BDDMockito.never;
-import static org.mockito.BDDMockito.times;
-import static org.mockito.BDDMockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link VersionResourceResolver}.
@@ -72,7 +73,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceExisting() throws Exception {
+	public void resolveResourceExisting() {
 		String file = "bar.css";
 		Resource expected = new ClassPathResource("test/" + file, getClass());
 		given(this.chain.resolveResource(null, file, this.locations)).willReturn(Mono.just(expected));
@@ -88,7 +89,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceNoVersionStrategy() throws Exception {
+	public void resolveResourceNoVersionStrategy() {
 		String file = "missing.css";
 		given(this.chain.resolveResource(null, file, this.locations)).willReturn(Mono.empty());
 
@@ -102,7 +103,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceNoVersionInPath() throws Exception {
+	public void resolveResourceNoVersionInPath() {
 		String file = "bar.css";
 		given(this.chain.resolveResource(null, file, this.locations)).willReturn(Mono.empty());
 		given(this.versionStrategy.extractVersion(file)).willReturn("");
@@ -118,7 +119,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceNoResourceAfterVersionRemoved() throws Exception {
+	public void resolveResourceNoResourceAfterVersionRemoved() {
 		String versionFile = "bar-version.css";
 		String version = "version";
 		String file = "bar.css";
@@ -137,7 +138,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceVersionDoesNotMatch() throws Exception {
+	public void resolveResourceVersionDoesNotMatch() {
 		String versionFile = "bar-version.css";
 		String version = "version";
 		String file = "bar.css";
@@ -158,7 +159,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void resolveResourceSuccess() throws Exception {
+	public void resolveResourceSuccess() {
 		String versionFile = "bar-version.css";
 		String version = "version";
 		String file = "bar.css";
@@ -183,7 +184,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test
-	public void getStrategyForPath() throws Exception {
+	public void getStrategyForPath() {
 		Map<String, VersionStrategy> strategies = new HashMap<>();
 		VersionStrategy jsStrategy = mock(VersionStrategy.class);
 		VersionStrategy catchAllStrategy = mock(VersionStrategy.class);
@@ -198,7 +199,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test // SPR-13883
-	public void shouldConfigureFixedPrefixAutomatically() throws Exception {
+	public void shouldConfigureFixedPrefixAutomatically() {
 
 		this.resolver.addFixedVersionStrategy("fixedversion", "/js/**", "/css/**", "/fixedversion/css/**");
 
@@ -218,7 +219,7 @@ public class VersionResourceResolverTests {
 	}
 
 	@Test // SPR-15372
-	public void resolveUrlPathNoVersionStrategy() throws Exception {
+	public void resolveUrlPathNoVersionStrategy() {
 		given(this.chain.resolveUrlPath("/foo.css", this.locations)).willReturn(Mono.just("/foo.css"));
 		String resolved = this.resolver.resolveUrlPathInternal("/foo.css", this.locations, this.chain)
 				.block(Duration.ofMillis(1000));

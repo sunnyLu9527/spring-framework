@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,9 @@ import javax.servlet.jsp.tagext.TagSupport;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for the {@link TagUtils} class.
@@ -34,10 +36,10 @@ public class TagUtilsTests {
 
 	@Test
 	public void getScopeSunnyDay() {
-		assertEquals(TagUtils.SCOPE_PAGE, "page");
-		assertEquals(TagUtils.SCOPE_APPLICATION, "application");
-		assertEquals(TagUtils.SCOPE_SESSION, "session");
-		assertEquals(TagUtils.SCOPE_REQUEST, "request");
+		assertEquals("page", TagUtils.SCOPE_PAGE);
+		assertEquals("application", TagUtils.SCOPE_APPLICATION);
+		assertEquals("session", TagUtils.SCOPE_SESSION);
+		assertEquals("request", TagUtils.SCOPE_REQUEST);
 
 		assertEquals(PageContext.PAGE_SCOPE, TagUtils.getScope("page"));
 		assertEquals(PageContext.REQUEST_SCOPE, TagUtils.getScope("request"));

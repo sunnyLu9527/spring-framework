@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,9 +32,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.result.method.RequestMappingInfo;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 import org.springframework.web.util.pattern.PatternParseException;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -51,9 +51,6 @@ import static org.springframework.web.reactive.result.method.RequestMappingInfo.
  */
 public class RequestMappingInfoTests {
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
 	// TODO: CORS pre-flight (see @Ignore)
 
 
@@ -61,7 +58,8 @@ public class RequestMappingInfoTests {
 	public void createEmpty() {
 		RequestMappingInfo info = paths().build();
 
-		assertEquals(0, info.getPatternsCondition().getPatterns().size());
+		PathPattern emptyPattern = (new PathPatternParser()).parse("");
+		assertEquals(Collections.singleton(emptyPattern), info.getPatternsCondition().getPatterns());
 		assertEquals(0, info.getMethodsCondition().getMethods().size());
 		assertEquals(true, info.getConsumesCondition().isEmpty());
 		assertEquals(true, info.getProducesCondition().isEmpty());
@@ -72,9 +70,9 @@ public class RequestMappingInfoTests {
 
 	@Test
 	public void throwWhenInvalidPattern() {
-		this.thrown.expect(PatternParseException.class);
-		this.thrown.expectMessage("Expected close capture character after variable name }");
-		paths("/{foo").build();
+		assertThatExceptionOfType(PatternParseException.class).isThrownBy(() ->
+				paths("/{foo").build())
+			.withMessageContaining("Expected close capture character after variable name }");
 	}
 
 	@Test
@@ -283,7 +281,7 @@ public class RequestMappingInfoTests {
 	@Ignore
 	public void preFlightRequest() throws Exception {
 		MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.options("/foo")
-				.header("Origin", "http://domain.com")
+				.header("Origin", "https://domain.com")
 				.header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "POST")
 				);
 

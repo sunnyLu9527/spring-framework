@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,8 +52,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Juergen Hoeller
@@ -61,7 +66,7 @@ import static org.junit.Assert.*;
 public class ValidatorFactoryTests {
 
 	@Test
-	public void testSimpleValidation() throws Exception {
+	public void testSimpleValidation() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -87,7 +92,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSimpleValidationWithCustomProvider() throws Exception {
+	public void testSimpleValidationWithCustomProvider() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.setProviderClass(HibernateValidator.class);
 		validator.afterPropertiesSet();
@@ -114,9 +119,10 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSimpleValidationWithClassLevel() throws Exception {
+	public void testSimpleValidationWithClassLevel() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
+
 		ValidPerson person = new ValidPerson();
 		person.setName("Juergen");
 		person.getAddress().setStreet("Juergen's Street");
@@ -129,7 +135,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidationFieldType() throws Exception {
+	public void testSpringValidationFieldType() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -144,7 +150,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidation() throws Exception {
+	public void testSpringValidation() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -172,7 +178,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidationWithClassLevel() throws Exception {
+	public void testSpringValidationWithClassLevel() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -190,7 +196,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidationWithAutowiredValidator() throws Exception {
+	public void testSpringValidationWithAutowiredValidator() {
 		ConfigurableApplicationContext ctx = new AnnotationConfigApplicationContext(
 				LocalValidatorFactoryBean.class);
 		LocalValidatorFactoryBean validator = ctx.getBean(LocalValidatorFactoryBean.class);
@@ -211,7 +217,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidationWithErrorInListElement() throws Exception {
+	public void testSpringValidationWithErrorInListElement() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -229,7 +235,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testSpringValidationWithErrorInSetElement() throws Exception {
+	public void testSpringValidationWithErrorInSetElement() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -247,7 +253,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testInnerBeanValidation() throws Exception {
+	public void testInnerBeanValidation() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -259,7 +265,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testValidationWithOptionalField() throws Exception {
+	public void testValidationWithOptionalField() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -271,7 +277,7 @@ public class ValidatorFactoryTests {
 	}
 
 	@Test
-	public void testListValidation() throws Exception {
+	public void testListValidation() {
 		LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 		validator.afterPropertiesSet();
 
@@ -284,6 +290,8 @@ public class ValidatorFactoryTests {
 		validator.validate(listContainer, errors);
 
 		FieldError fieldError = errors.getFieldError("list[1]");
+		assertNotNull(fieldError);
+		assertEquals("X", fieldError.getRejectedValue());
 		assertEquals("X", errors.getFieldValue("list[1]"));
 	}
 

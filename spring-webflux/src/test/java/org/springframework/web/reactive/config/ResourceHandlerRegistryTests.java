@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,14 +43,16 @@ import org.springframework.web.reactive.resource.CssLinkResourceTransformer;
 import org.springframework.web.reactive.resource.PathResourceResolver;
 import org.springframework.web.reactive.resource.ResourceResolver;
 import org.springframework.web.reactive.resource.ResourceTransformer;
+import org.springframework.web.reactive.resource.ResourceTransformerSupport;
+import org.springframework.web.reactive.resource.ResourceUrlProvider;
 import org.springframework.web.reactive.resource.ResourceWebHandler;
 import org.springframework.web.reactive.resource.VersionResourceResolver;
 import org.springframework.web.reactive.resource.WebJarsResourceResolver;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -120,8 +122,11 @@ public class ResourceHandlerRegistryTests {
 
 	@Test
 	public void resourceChain() throws Exception {
+		ResourceUrlProvider resourceUrlProvider = Mockito.mock(ResourceUrlProvider.class);
+		this.registry.setResourceUrlProvider(resourceUrlProvider);
 		ResourceResolver mockResolver = Mockito.mock(ResourceResolver.class);
-		ResourceTransformer mockTransformer = Mockito.mock(ResourceTransformer.class);
+		ResourceTransformerSupport mockTransformer = Mockito.mock(ResourceTransformerSupport.class);
+
 		this.registration.resourceChain(true).addResolver(mockResolver).addTransformer(mockTransformer);
 
 		ResourceWebHandler handler = getHandler("/resources/**");
@@ -138,6 +143,7 @@ public class ResourceHandlerRegistryTests {
 		assertThat(transformers, Matchers.hasSize(2));
 		assertThat(transformers.get(0), Matchers.instanceOf(CachingResourceTransformer.class));
 		assertThat(transformers.get(1), Matchers.equalTo(mockTransformer));
+		Mockito.verify(mockTransformer).setResourceUrlProvider(resourceUrlProvider);
 	}
 
 	@Test

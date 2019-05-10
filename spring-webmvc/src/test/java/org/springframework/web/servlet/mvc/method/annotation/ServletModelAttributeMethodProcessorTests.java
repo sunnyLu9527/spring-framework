@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,10 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.HandlerMapping;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Test fixture for {@link ServletModelAttributeMethodProcessor} specific tests.
@@ -107,6 +110,7 @@ public class ServletModelAttributeMethodProcessorTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void createAttributeUriTemplateVarWithOptional() throws Exception {
 		Map<String, String> uriTemplateVars = new HashMap<>();
 		uriTemplateVars.put("testBean3", "Patty");
@@ -141,6 +145,7 @@ public class ServletModelAttributeMethodProcessorTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void createAttributeRequestParameterWithOptional() throws Exception {
 		request.addParameter("testBean3", "Patty");
 
@@ -151,6 +156,7 @@ public class ServletModelAttributeMethodProcessorTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void attributesAsNullValues() throws Exception {
 		request.addParameter("name", "Patty");
 
@@ -170,6 +176,7 @@ public class ServletModelAttributeMethodProcessorTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void attributesAsOptionalEmpty() throws Exception {
 		request.addParameter("name", "Patty");
 

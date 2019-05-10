@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,12 +19,18 @@ package org.springframework.http;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Arjen Poutsma
@@ -70,6 +76,25 @@ public class ResponseEntityTests {
 		assertNotNull(responseEntity);
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
 		assertEquals(entity, responseEntity.getBody());
+	}
+
+	@Test
+	public void ofOptional() {
+		Integer entity = 42;
+		ResponseEntity<Integer> responseEntity = ResponseEntity.of(Optional.of(entity));
+
+		assertNotNull(responseEntity);
+		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+		assertEquals(entity, responseEntity.getBody());
+	}
+
+	@Test
+	public void ofEmptyOptional() {
+		ResponseEntity<Integer> responseEntity = ResponseEntity.of(Optional.empty());
+
+		assertNotNull(responseEntity);
+		assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+		assertNull(responseEntity.getBody());
 	}
 
 	@Test
@@ -160,7 +185,7 @@ public class ResponseEntityTests {
 		HttpHeaders responseHeaders = responseEntity.getHeaders();
 
 		assertEquals("GET", responseHeaders.getFirst("Allow"));
-		assertEquals("Thu, 1 Jan 1970 00:00:12 GMT",
+		assertEquals("Thu, 01 Jan 1970 00:00:12 GMT",
 				responseHeaders.getFirst("Last-Modified"));
 		assertEquals(location.toASCIIString(),
 				responseHeaders.getFirst("Location"));

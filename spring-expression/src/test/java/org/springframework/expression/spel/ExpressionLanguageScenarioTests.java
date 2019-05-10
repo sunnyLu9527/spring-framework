@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,7 +35,8 @@ import org.springframework.expression.TypedValue;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 ///CLOVER:OFF
 
@@ -80,13 +81,9 @@ public class ExpressionLanguageScenarioTests extends AbstractExpressionTests {
 			assertEquals("hello world", value);
 			assertEquals(String.class, value.getClass());
 		}
-		catch (EvaluationException ee) {
-			ee.printStackTrace();
-			fail("Unexpected Exception: " + ee.getMessage());
-		}
-		catch (ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected Exception: " + pe.getMessage());
+		catch (EvaluationException | ParseException ex) {
+			ex.printStackTrace();
+			fail("Unexpected Exception: " + ex.getMessage());
 		}
 	}
 
@@ -189,13 +186,9 @@ public class ExpressionLanguageScenarioTests extends AbstractExpressionTests {
 			assertEquals("hellohello", value);
 
 		}
-		catch (EvaluationException ee) {
-			ee.printStackTrace();
-			fail("Unexpected Exception: " + ee.getMessage());
-		}
-		catch (ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected Exception: " + pe.getMessage());
+		catch (EvaluationException | ParseException ex) {
+			ex.printStackTrace();
+			fail("Unexpected Exception: " + ex.getMessage());
 		}
 	}
 
@@ -219,7 +212,7 @@ public class ExpressionLanguageScenarioTests extends AbstractExpressionTests {
 			fail("Should not be allowed to set oranges to be blue !");
 		}
 		catch (SpelEvaluationException ee) {
-			assertEquals(ee.getMessageCode(), SpelMessage.PROPERTY_OR_FIELD_NOT_WRITABLE_ON_NULL);
+			assertEquals(SpelMessage.PROPERTY_OR_FIELD_NOT_WRITABLE_ON_NULL, ee.getMessageCode());
 		}
 	}
 
@@ -240,7 +233,7 @@ public class ExpressionLanguageScenarioTests extends AbstractExpressionTests {
 			fail("Should not be allowed to set peas to be blue !");
 		}
 		catch (SpelEvaluationException ee) {
-			assertEquals(ee.getMessageCode(), SpelMessage.PROPERTY_OR_FIELD_NOT_WRITABLE_ON_NULL);
+			assertEquals(SpelMessage.PROPERTY_OR_FIELD_NOT_WRITABLE_ON_NULL, ee.getMessageCode());
 		}
 	}
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,13 +35,19 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.junit.Test;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.*;
-import static org.springframework.core.CollectionFactory.*;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.fail;
+import static org.springframework.core.CollectionFactory.createApproximateCollection;
+import static org.springframework.core.CollectionFactory.createApproximateMap;
+import static org.springframework.core.CollectionFactory.createCollection;
+import static org.springframework.core.CollectionFactory.createMap;
 
 /**
  * Unit tests for {@link CollectionFactory}.
@@ -104,7 +110,7 @@ public class CollectionFactoryTests {
 	 * {@link CollectionFactory#createApproximateMap(Object, int)}
 	 * is not type-safe.
 	 * <p>The reasoning is similar that described in
-	 * {@link #createApproximateCollectionIsNotTypeSafe()}.
+	 * {@link #createApproximateCollectionIsNotTypeSafeForEnumSet}.
 	 */
 	@Test
 	public void createApproximateMapIsNotTypeSafeForEnumMap() {
@@ -242,6 +248,12 @@ public class CollectionFactoryTests {
 		assertThat(createCollection(EnumSet.class, Color.class, 0), is(instanceOf(EnumSet.class)));
 	}
 
+	@Test  // SPR-17619
+	public void createsEnumSetSubclass() {
+		EnumSet<Color> enumSet = EnumSet.noneOf(Color.class);
+		assertThat(createCollection(enumSet.getClass(), Color.class, 0), is(instanceOf(enumSet.getClass())));
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void rejectsInvalidElementTypeForEnumSet() {
 		createCollection(EnumSet.class, Object.class, 0);
@@ -297,7 +309,8 @@ public class CollectionFactoryTests {
 	}
 
 
-	static enum Color {
+	enum Color {
 		RED, BLUE;
 	}
+
 }

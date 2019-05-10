@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,8 +32,16 @@ import org.springframework.oxm.MarshallingFailureException;
 import org.springframework.oxm.Unmarshaller;
 import org.springframework.oxm.UnmarshallingFailureException;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link MarshallingHttpMessageConverter}.
@@ -43,7 +51,7 @@ import static org.mockito.BDDMockito.*;
 public class MarshallingHttpMessageConverterTests {
 
 	@Test
-	public void canRead() throws Exception {
+	public void canRead() {
 		Unmarshaller unmarshaller = mock(Unmarshaller.class);
 
 		given(unmarshaller.supports(Integer.class)).willReturn(false);
@@ -58,7 +66,7 @@ public class MarshallingHttpMessageConverterTests {
 	}
 
 	@Test
-	public void canWrite() throws Exception {
+	public void canWrite() {
 		Marshaller marshaller = mock(Marshaller.class);
 
 		given(marshaller.supports(Integer.class)).willReturn(false);
@@ -87,7 +95,7 @@ public class MarshallingHttpMessageConverterTests {
 		assertEquals("Invalid result", body, result);
 	}
 
-	@Test(expected = TypeMismatchException.class)
+	@Test
 	public void readWithTypeMismatchException() throws Exception {
 		MockHttpInputMessage inputMessage = new MockHttpInputMessage(new byte[0]);
 
@@ -96,7 +104,13 @@ public class MarshallingHttpMessageConverterTests {
 		given(unmarshaller.unmarshal(isA(StreamSource.class))).willReturn(Integer.valueOf(3));
 
 		MarshallingHttpMessageConverter converter = new MarshallingHttpMessageConverter(marshaller, unmarshaller);
-		converter.read(String.class, inputMessage);
+		try {
+			converter.read(String.class, inputMessage);
+			fail("Should have thrown HttpMessageNotReadableException");
+		}
+		catch (HttpMessageNotReadableException ex) {
+			assertTrue(ex.getCause() instanceof TypeMismatchException);
+		}
 	}
 
 	@Test
@@ -130,8 +144,8 @@ public class MarshallingHttpMessageConverterTests {
 		MarshallingHttpMessageConverter converter = new MarshallingHttpMessageConverter(marshaller);
 		converter.write(body, null, outputMessage);
 
-		assertEquals("Invalid content-type", new MediaType("application", "xml"), outputMessage.getHeaders()
-				.getContentType());
+		assertEquals("Invalid content-type", new MediaType("application", "xml"),
+				outputMessage.getHeaders().getContentType());
 	}
 
 	@Test

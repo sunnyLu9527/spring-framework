@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.security.Principal;
+import java.util.Collections;
 import java.util.Set;
 
 import org.junit.Before;
@@ -30,20 +31,29 @@ import org.junit.Test;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.support.StaticWebApplicationContext;
+import org.springframework.web.method.HandlerTypePredicate;
+import org.springframework.web.reactive.result.condition.ConsumesRequestCondition;
+import org.springframework.web.reactive.result.condition.PatternsRequestCondition;
 import org.springframework.web.reactive.result.method.RequestMappingInfo;
 import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for {@link RequestMappingHandlerMapping}.
@@ -62,16 +72,29 @@ public class RequestMappingHandlerMappingTests {
 		this.handlerMapping.setApplicationContext(wac);
 	}
 
+
 	@Test
 	public void resolveEmbeddedValuesInPatterns() {
-		this.handlerMapping.setEmbeddedValueResolver(
-				value -> "/${pattern}/bar".equals(value) ? "/foo/bar" : value
-		);
+		this.handlerMapping.setEmbeddedValueResolver(value -> "/${pattern}/bar".equals(value) ? "/foo/bar" : value);
 
 		String[] patterns = new String[] { "/foo", "/${pattern}/bar" };
 		String[] result = this.handlerMapping.resolveEmbeddedValuesInPatterns(patterns);
 
 		assertArrayEquals(new String[] { "/foo", "/foo/bar" }, result);
+	}
+
+	@Test
+	public void pathPrefix() throws Exception {
+		this.handlerMapping.setEmbeddedValueResolver(value -> "/${prefix}".equals(value) ? "/api" : value);
+		this.handlerMapping.setPathPrefixes(Collections.singletonMap(
+				"/${prefix}", HandlerTypePredicate.forAnnotation(RestController.class)));
+
+		Method method = UserController.class.getMethod("getUser");
+		RequestMappingInfo info = this.handlerMapping.getMappingForMethod(method, UserController.class);
+
+		assertNotNull(info);
+		assertEquals(Collections.singleton(new PathPatternParser().parse("/api/user/{id}")),
+				info.getPatternsCondition().getPatterns());
 	}
 
 	@Test
@@ -86,10 +109,26 @@ public class RequestMappingHandlerMappingTests {
 
 	@Test // SPR-14988
 	public void getMappingOverridesConsumesFromTypeLevelAnnotation() throws Exception {
-		RequestMappingInfo requestMappingInfo = assertComposedAnnotationMapping(RequestMethod.GET);
+		RequestMappingInfo requestMappingInfo = assertComposedAnnotationMapping(RequestMethod.POST);
 
-		assertArrayEquals(new MediaType[]{MediaType.ALL}, new ArrayList<>(
-				requestMappingInfo.getConsumesCondition().getConsumableMediaTypes()).toArray());
+		ConsumesRequestCondition condition = requestMappingInfo.getConsumesCondition();
+		assertEquals(Collections.singleton(MediaType.APPLICATION_XML), condition.getConsumableMediaTypes());
+	}
+
+	@Test // gh-22010
+	public void consumesWithOptionalRequestBody() {
+		this.wac.registerSingleton("testController", ComposedAnnotationController.class);
+		this.wac.refresh();
+		this.handlerMapping.afterPropertiesSet();
+		RequestMappingInfo info = this.handlerMapping.getHandlerMethods().keySet().stream()
+				.filter(i -> {
+					PatternsRequestCondition condition = i.getPatternsCondition();
+					return condition.getPatterns().iterator().next().getPatternString().equals("/post");
+				})
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("No /post"));
+
+		assertFalse(info.getConsumesCondition().isBodyRequired());
 	}
 
 	@Test
@@ -129,7 +168,7 @@ public class RequestMappingHandlerMappingTests {
 			RequestMethod requestMethod) throws Exception {
 
 		Class<?> clazz = ComposedAnnotationController.class;
-		Method method = clazz.getMethod(methodName);
+		Method method = ClassUtils.getMethod(clazz, methodName, (Class<?>[]) null);
 		RequestMappingInfo info = this.handlerMapping.getMappingForMethod(method, clazz);
 
 		assertNotNull(info);
@@ -158,12 +197,12 @@ public class RequestMappingHandlerMappingTests {
 		public void postJson() {
 		}
 
-		@GetMapping(value = "/get", consumes = MediaType.ALL_VALUE)
+		@GetMapping("/get")
 		public void get() {
 		}
 
-		@PostMapping("/post")
-		public void post() {
+		@PostMapping(path = "/post", consumes = MediaType.APPLICATION_XML_VALUE)
+		public void post(@RequestBody(required = false) Foo foo) {
 		}
 
 		@PutMapping("/put")
@@ -179,6 +218,9 @@ public class RequestMappingHandlerMappingTests {
 		}
 	}
 
+	private static class Foo {
+	}
+
 
 	@RequestMapping(method = RequestMethod.POST,
 			produces = MediaType.APPLICATION_JSON_VALUE,
@@ -189,6 +231,17 @@ public class RequestMappingHandlerMappingTests {
 
 		@AliasFor(annotation = RequestMapping.class, attribute = "path") @SuppressWarnings("unused")
 		String[] value() default {};
+	}
+
+
+	@RestController
+	@RequestMapping("/user")
+	static class UserController {
+
+		@GetMapping("/{id}")
+		public Principal getUser() {
+			return mock(Principal.class);
+		}
 	}
 
 }

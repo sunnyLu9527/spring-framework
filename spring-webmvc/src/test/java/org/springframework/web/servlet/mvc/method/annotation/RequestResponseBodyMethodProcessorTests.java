@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -70,7 +70,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 import org.springframework.web.util.WebUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test fixture for a {@link RequestResponseBodyMethodProcessor} with
@@ -268,8 +272,8 @@ public class RequestResponseBodyMethodProcessorTests {
 		this.servletRequest.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
 		List<HttpMessageConverter<?>> converters = new ArrayList<>();
-		HttpMessageConverter target = new MappingJackson2HttpMessageConverter();
-		HttpMessageConverter proxy = ProxyFactory.getProxy(HttpMessageConverter.class, new SingletonTargetSource(target));
+		HttpMessageConverter<Object> target = new MappingJackson2HttpMessageConverter();
+		HttpMessageConverter<?> proxy = ProxyFactory.getProxy(HttpMessageConverter.class, new SingletonTargetSource(target));
 		converters.add(proxy);
 		RequestResponseBodyMethodProcessor processor = new RequestResponseBodyMethodProcessor(converters);
 
@@ -377,12 +381,12 @@ public class RequestResponseBodyMethodProcessorTests {
 
 		assertContentDisposition(processor, false, "/hello.json", "whitelisted extension");
 		assertContentDisposition(processor, false, "/hello.pdf", "registered extension");
-		assertContentDisposition(processor, true, "/hello.dataless", "uknown extension");
+		assertContentDisposition(processor, true, "/hello.dataless", "unknown extension");
 
 		// path parameters
 		assertContentDisposition(processor, false, "/hello.json;a=b", "path param shouldn't cause issue");
-		assertContentDisposition(processor, true, "/hello.json;a=b;setup.dataless", "uknown ext in path params");
-		assertContentDisposition(processor, true, "/hello.dataless;a=b;setup.json", "uknown ext in filename");
+		assertContentDisposition(processor, true, "/hello.json;a=b;setup.dataless", "unknown ext in path params");
+		assertContentDisposition(processor, true, "/hello.dataless;a=b;setup.json", "unknown ext in filename");
 		assertContentDisposition(processor, false, "/hello.json;a=b;setup.json", "whitelisted extensions");
 
 		// encoded dot
@@ -692,7 +696,7 @@ public class RequestResponseBodyMethodProcessorTests {
 	@Test  // SPR-14520
 	public void resolveArgumentTypeVariableWithGenericInterface() throws Exception {
 		this.servletRequest.setContent("\"foo\"".getBytes("UTF-8"));
-		this.servletRequest.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+		this.servletRequest.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
 		Method method = MyControllerImplementingInterface.class.getMethod("handle", Object.class);
 		HandlerMethod handlerMethod = new HandlerMethod(new MyControllerImplementingInterface(), method);
@@ -932,7 +936,21 @@ public class RequestResponseBodyMethodProcessorTests {
 	}
 
 
-	private static class JacksonController {
+	private static class BaseController<T> {
+
+		@RequestMapping
+		@ResponseBody
+		@SuppressWarnings("unchecked")
+		public List<T> handleTypeInfoList() {
+			List<T> list = new ArrayList<>();
+			list.add((T) new Foo("foo"));
+			list.add((T) new Bar("bar"));
+			return list;
+		}
+	}
+
+
+	private static class JacksonController extends BaseController<ParentClass> {
 
 		@RequestMapping
 		@ResponseBody
@@ -967,15 +985,6 @@ public class RequestResponseBodyMethodProcessorTests {
 		@ResponseBody
 		public JacksonViewBean handleHttpEntity(@JsonView(MyJacksonView1.class) HttpEntity<JacksonViewBean> entity) {
 			return entity.getBody();
-		}
-
-		@RequestMapping
-		@ResponseBody
-		public List<ParentClass> handleTypeInfoList() {
-			List<ParentClass> list = new ArrayList<>();
-			list.add(new Foo("foo"));
-			list.add(new Bar("bar"));
-			return list;
 		}
 
 		@RequestMapping

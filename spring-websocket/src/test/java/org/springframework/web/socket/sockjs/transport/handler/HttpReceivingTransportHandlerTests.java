@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.springframework.web.socket.sockjs.transport.handler;
 
 import org.junit.Test;
 
-import org.springframework.http.MediaType;
 import org.springframework.web.socket.AbstractHttpRequestTests;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -27,12 +26,17 @@ import org.springframework.web.socket.sockjs.transport.session.AbstractSockJsSes
 import org.springframework.web.socket.sockjs.transport.session.StubSockJsServiceConfig;
 import org.springframework.web.socket.sockjs.transport.session.TestHttpSockJsSession;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Test fixture for {@link AbstractHttpReceivingTransportHandler} and sub-classes
- * {@link XhrReceivingTransportHandler} and {@link JsonpReceivingTransportHandler}.
+ * {@link XhrReceivingTransportHandler}.
  *
  * @author Rossen Stoyanchev
  */
@@ -44,35 +48,6 @@ public class HttpReceivingTransportHandlerTests extends AbstractHttpRequestTests
 		handleRequest(new XhrReceivingTransportHandler());
 
 		assertEquals(204, this.servletResponse.getStatus());
-	}
-
-	@Test
-	public void readMessagesJsonp() throws Exception {
-		this.servletRequest.setContent("[\"x\"]".getBytes("UTF-8"));
-		handleRequest(new JsonpReceivingTransportHandler());
-
-		assertEquals(200, this.servletResponse.getStatus());
-		assertEquals("ok", this.servletResponse.getContentAsString());
-	}
-
-	@Test
-	public void readMessagesJsonpFormEncoded() throws Exception {
-		this.servletRequest.setContent("d=[\"x\"]".getBytes("UTF-8"));
-		this.servletRequest.setContentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-		handleRequest(new JsonpReceivingTransportHandler());
-
-		assertEquals(200, this.servletResponse.getStatus());
-		assertEquals("ok", this.servletResponse.getContentAsString());
-	}
-
-	@Test  // SPR-10621
-	public void readMessagesJsonpFormEncodedWithEncoding() throws Exception {
-		this.servletRequest.setContent("d=[\"x\"]".getBytes("UTF-8"));
-		this.servletRequest.setContentType("application/x-www-form-urlencoded;charset=UTF-8");
-		handleRequest(new JsonpReceivingTransportHandler());
-
-		assertEquals(200, this.servletResponse.getStatus());
-		assertEquals("ok", this.servletResponse.getContentAsString());
 	}
 
 	@Test

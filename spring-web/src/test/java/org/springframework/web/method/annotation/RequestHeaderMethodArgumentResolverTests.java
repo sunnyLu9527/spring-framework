@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,10 +41,13 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Test fixture with {@link org.springframework.web.method.annotation.RequestHeaderMethodArgumentResolver}.
+ * Test fixture with {@link RequestHeaderMethodArgumentResolver}.
  *
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
@@ -70,7 +73,7 @@ public class RequestHeaderMethodArgumentResolverTests {
 
 	@Before
 	@SuppressWarnings("resource")
-	public void setUp() throws Exception {
+	public void setup() throws Exception {
 		GenericWebApplicationContext context = new GenericWebApplicationContext();
 		context.refresh();
 		resolver = new RequestHeaderMethodArgumentResolver(context.getBeanFactory());
@@ -94,7 +97,7 @@ public class RequestHeaderMethodArgumentResolverTests {
 	}
 
 	@After
-	public void teardown() {
+	public void reset() {
 		RequestContextHolder.resetRequestAttributes();
 	}
 

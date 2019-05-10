@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -120,6 +120,36 @@ public class MultipartIntegrationTests extends AbstractHttpHandlerIntegrationTes
 	}
 
 	@Test
+	public void filePartsFlux() {
+		Mono<String> result = webClient
+				.post()
+				.uri("/filePartFlux")
+				.syncBody(generateBody())
+				.retrieve()
+				.bodyToMono(String.class);
+
+		StepVerifier.create(result)
+				.consumeNextWith(body -> assertEquals(
+						"[fileParts:foo.txt,fileParts:logo.png]", body))
+				.verifyComplete();
+	}
+
+	@Test
+	public void filePartsMono() {
+		Mono<String> result = webClient
+				.post()
+				.uri("/filePartMono")
+				.syncBody(generateBody())
+				.retrieve()
+				.bodyToMono(String.class);
+
+		StepVerifier.create(result)
+				.consumeNextWith(body -> assertEquals(
+						"[fileParts:foo.txt]", body))
+				.verifyComplete();
+	}
+
+	@Test
 	public void modelAttribute() {
 		Mono<String> result = webClient
 				.post()
@@ -160,20 +190,16 @@ public class MultipartIntegrationTests extends AbstractHttpHandlerIntegrationTes
 	static class MultipartController {
 
 		@PostMapping("/requestPart")
-		void requestPart(
-				@RequestPart FormFieldPart fieldPart,
+		void requestPart(@RequestPart FormFieldPart fieldPart,
 				@RequestPart("fileParts") FilePart fileParts,
-				@RequestPart("fileParts") Mono<FilePart> filePartsMono,
-				@RequestPart("fileParts") Flux<FilePart> filePartsFlux,
-				@RequestPart("jsonPart") Person person,
 				@RequestPart("jsonPart") Mono<Person> personMono) {
 
 			assertEquals("fieldValue", fieldPart.value());
 			assertEquals("fileParts:foo.txt", partDescription(fileParts));
-			assertEquals("fileParts:foo.txt", partDescription(filePartsMono.block()));
-			assertEquals("[fileParts:foo.txt,fileParts:logo.png]", partFluxDescription(filePartsFlux).block());
-			assertEquals("Jason", person.getName());
-			assertEquals("Jason", personMono.block().getName());
+
+			StepVerifier.create(personMono)
+					.consumeNextWith(p -> assertEquals("Jason", p.getName()))
+					.verifyComplete();
 		}
 
 		@PostMapping("/requestBodyMap")
@@ -184,6 +210,16 @@ public class MultipartIntegrationTests extends AbstractHttpHandlerIntegrationTes
 		@PostMapping("/requestBodyFlux")
 		Mono<String> requestBodyFlux(@RequestBody Flux<Part> parts) {
 			return partFluxDescription(parts);
+		}
+
+		@PostMapping("/filePartFlux")
+		Mono<String> filePartsFlux(@RequestPart("fileParts") Flux<FilePart> parts) {
+			return partFluxDescription(parts);
+		}
+
+		@PostMapping("/filePartMono")
+		Mono<String> filePartsFlux(@RequestPart("fileParts") Mono<FilePart> parts) {
+			return partFluxDescription(Flux.from(parts));
 		}
 
 		@PostMapping("/modelAttribute")
@@ -199,7 +235,7 @@ public class MultipartIntegrationTests extends AbstractHttpHandlerIntegrationTes
 	}
 
 	private static Mono<String> partFluxDescription(Flux<? extends Part> partsFlux) {
-		return partsFlux.log().collectList().map(MultipartIntegrationTests::partListDescription);
+		return partsFlux.collectList().map(MultipartIntegrationTests::partListDescription);
 	}
 
 	private static String partListDescription(List<? extends Part> parts) {

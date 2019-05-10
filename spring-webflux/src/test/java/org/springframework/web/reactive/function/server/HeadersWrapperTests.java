@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,8 +32,9 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.support.ServerRequestWrapper;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Arjen Poutsma
@@ -53,66 +54,66 @@ public class HeadersWrapperTests {
 
 
 	@Test
-	public void accept() throws Exception {
+	public void accept() {
 		List<MediaType> accept = Collections.singletonList(MediaType.APPLICATION_JSON);
-		when(mockHeaders.accept()).thenReturn(accept);
+		given(mockHeaders.accept()).willReturn(accept);
 
 		assertSame(accept, wrapper.accept());
 	}
 
 	@Test
-	public void acceptCharset() throws Exception {
+	public void acceptCharset() {
 		List<Charset> acceptCharset = Collections.singletonList(StandardCharsets.UTF_8);
-		when(mockHeaders.acceptCharset()).thenReturn(acceptCharset);
+		given(mockHeaders.acceptCharset()).willReturn(acceptCharset);
 
 		assertSame(acceptCharset, wrapper.acceptCharset());
 	}
 
 	@Test
-	public void contentLength() throws Exception {
+	public void contentLength() {
 		OptionalLong contentLength = OptionalLong.of(42L);
-		when(mockHeaders.contentLength()).thenReturn(contentLength);
+		given(mockHeaders.contentLength()).willReturn(contentLength);
 
 		assertSame(contentLength, wrapper.contentLength());
 	}
 
 	@Test
-	public void contentType() throws Exception {
+	public void contentType() {
 		Optional<MediaType> contentType = Optional.of(MediaType.APPLICATION_JSON);
-		when(mockHeaders.contentType()).thenReturn(contentType);
+		given(mockHeaders.contentType()).willReturn(contentType);
 
 		assertSame(contentType, wrapper.contentType());
 	}
 
 	@Test
-	public void host() throws Exception {
+	public void host() {
 		InetSocketAddress host = InetSocketAddress.createUnresolved("example.com", 42);
-		when(mockHeaders.host()).thenReturn(host);
+		given(mockHeaders.host()).willReturn(host);
 
 		assertSame(host, wrapper.host());
 	}
 
 	@Test
-	public void range() throws Exception {
+	public void range() {
 		List<HttpRange> range = Collections.singletonList(HttpRange.createByteRange(42));
-		when(mockHeaders.range()).thenReturn(range);
+		given(mockHeaders.range()).willReturn(range);
 
 		assertSame(range, wrapper.range());
 	}
 
 	@Test
-	public void header() throws Exception {
+	public void header() {
 		String name = "foo";
 		List<String> value = Collections.singletonList("bar");
-		when(mockHeaders.header(name)).thenReturn(value);
+		given(mockHeaders.header(name)).willReturn(value);
 
 		assertSame(value, wrapper.header(name));
 	}
 
 	@Test
-	public void asHttpHeaders() throws Exception {
+	public void asHttpHeaders() {
 		HttpHeaders httpHeaders = new HttpHeaders();
-		when(mockHeaders.asHttpHeaders()).thenReturn(httpHeaders);
+		given(mockHeaders.asHttpHeaders()).willReturn(httpHeaders);
 
 		assertSame(httpHeaders, wrapper.asHttpHeaders());
 	}

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.SynchronousSink;
 
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.lang.Nullable;
@@ -109,8 +110,9 @@ public class AppCacheManifestTransformer extends ResourceTransformerSupport {
 						return Mono.just(outputResource);
 					}
 					DataBufferFactory bufferFactory = exchange.getResponse().bufferFactory();
-					return DataBufferUtils.read(outputResource, bufferFactory, StreamUtils.BUFFER_SIZE)
-							.reduce(DataBufferUtils.writeAggregator())
+					Flux<DataBuffer> flux = DataBufferUtils
+							.read(outputResource, bufferFactory, StreamUtils.BUFFER_SIZE);
+					return DataBufferUtils.join(flux)
 							.flatMap(dataBuffer -> {
 								CharBuffer charBuffer = DEFAULT_CHARSET.decode(dataBuffer.asByteBuffer());
 								DataBufferUtils.release(dataBuffer);
@@ -125,12 +127,10 @@ public class AppCacheManifestTransformer extends ResourceTransformerSupport {
 
 		if (!content.startsWith(MANIFEST_HEADER)) {
 			if (logger.isTraceEnabled()) {
-				logger.trace("Manifest should start with 'CACHE MANIFEST', skip: " + resource);
+				logger.trace(exchange.getLogPrefix() +
+						"Skipping " + resource + ": Manifest does not start with 'CACHE MANIFEST'");
 			}
 			return Mono.just(resource);
-		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("Transforming resource: " + resource);
 		}
 		return Flux.generate(new LineInfoGenerator(content))
 				.concatMap(info -> processLine(info, exchange, resource, chain))
@@ -141,9 +141,6 @@ public class AppCacheManifestTransformer extends ResourceTransformerSupport {
 				.map(out -> {
 					String hash = DigestUtils.md5DigestAsHex(out.toByteArray());
 					writeToByteArrayOutputStream(out, "\n" + "# Hash: " + hash);
-					if (logger.isTraceEnabled()) {
-						logger.trace("AppCache file: [" + resource.getFilename()+ "] hash: [" + hash + "]");
-					}
 					return new TransformedResource(resource, out.toByteArray());
 				});
 	}
@@ -166,12 +163,7 @@ public class AppCacheManifestTransformer extends ResourceTransformerSupport {
 		}
 
 		String link = toAbsolutePath(info.getLine(), exchange);
-		return resolveUrlPath(link, exchange, resource, chain)
-				.doOnNext(path -> {
-					if (logger.isTraceEnabled()) {
-						logger.trace("Link modified: " + path + " (original: " + info.getLine() + ")");
-					}
-				});
+		return resolveUrlPath(link, exchange, resource, chain);
 	}
 
 
@@ -236,7 +228,7 @@ public class AppCacheManifestTransformer extends ResourceTransformerSupport {
 		}
 
 		private static boolean hasScheme(String line) {
-			int index = line.indexOf(":");
+			int index = line.indexOf(':');
 			return (line.startsWith("//") || (index > 0 && !line.substring(0, index).contains("/")));
 		}
 

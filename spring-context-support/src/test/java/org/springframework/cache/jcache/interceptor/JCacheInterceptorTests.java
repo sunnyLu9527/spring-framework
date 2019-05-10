@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,9 @@ import org.springframework.cache.interceptor.NamedCacheResolver;
 import org.springframework.cache.jcache.AbstractJCacheTests;
 import org.springframework.util.ReflectionUtils;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Stephane Nicoll
@@ -47,15 +49,9 @@ public class JCacheInterceptorTests extends AbstractJCacheTests {
 		AnnotatedJCacheableService service = new AnnotatedJCacheableService(cacheManager.getCache("default"));
 		Method m = ReflectionUtils.findMethod(AnnotatedJCacheableService.class, "cache", String.class);
 
-		try {
-			interceptor.execute(dummyInvoker, service, m, new Object[] {"myId"});
-		}
-		catch (IllegalStateException ex) {
-			assertTrue(ex.getMessage().contains("JSR-107 only supports a single cache"));
-		}
-		catch (Throwable ex) {
-			fail("Unexpected: " + ex);
-		}
+		assertThatIllegalStateException().isThrownBy(() ->
+				interceptor.execute(dummyInvoker, service, m, new Object[] {"myId"}))
+			.withMessageContaining("JSR-107 only supports a single cache");
 	}
 
 	@Test
@@ -66,22 +62,15 @@ public class JCacheInterceptorTests extends AbstractJCacheTests {
 
 		AnnotatedJCacheableService service = new AnnotatedJCacheableService(cacheManager.getCache("default"));
 		Method m = ReflectionUtils.findMethod(AnnotatedJCacheableService.class, "cache", String.class);
-
-		try {
-			interceptor.execute(dummyInvoker, service, m, new Object[] {"myId"});
-		}
-		catch (IllegalStateException ex) {
-			assertTrue(ex.getMessage().contains("Cache could not have been resolved for"));
-		}
-		catch (Throwable ex) {
-			fail("Unexpected: " + ex);
-		}
+		assertThatIllegalStateException().isThrownBy(() ->
+				interceptor.execute(dummyInvoker, service, m, new Object[] {"myId"}))
+			.withMessageContaining("Cache could not have been resolved for");
 	}
 
 	@Test
 	public void cacheManagerMandatoryIfCacheResolverNotSet() {
-		thrown.expect(IllegalStateException.class);
-		createOperationSource(null, null, null, defaultKeyGenerator);
+		assertThatIllegalStateException().isThrownBy(() ->
+				createOperationSource(null, null, null, defaultKeyGenerator));
 	}
 
 	@Test
@@ -113,7 +102,6 @@ public class JCacheInterceptorTests extends AbstractJCacheTests {
 		source.setExceptionCacheResolver(exceptionCacheResolver);
 		source.setKeyGenerator(keyGenerator);
 		source.setBeanFactory(new StaticListableBeanFactory());
-		source.afterPropertiesSet();
 		source.afterSingletonsInstantiated();
 		return source;
 	}

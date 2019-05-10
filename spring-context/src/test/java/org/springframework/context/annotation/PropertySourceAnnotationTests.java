@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,9 +25,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import javax.inject.Inject;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.FactoryBean;
@@ -40,8 +38,11 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.core.io.support.PropertySourceFactory;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the processing of @PropertySource annotations on @Configuration classes.
@@ -51,9 +52,6 @@ import static org.junit.Assert.*;
  * @since 3.1
  */
 public class PropertySourceAnnotationTests {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 
 	@Test
@@ -225,9 +223,9 @@ public class PropertySourceAnnotationTests {
 
 	@Test
 	public void withMissingPropertySource() {
-		thrown.expect(BeanDefinitionStoreException.class);
-		thrown.expectCause(isA(FileNotFoundException.class));
-		new AnnotationConfigApplicationContext(ConfigWithMissingPropertySource.class);
+		assertThatExceptionOfType(BeanDefinitionStoreException.class).isThrownBy(() ->
+				new AnnotationConfigApplicationContext(ConfigWithMissingPropertySource.class))
+			.withCauseInstanceOf(FileNotFoundException.class);
 	}
 
 	@Test

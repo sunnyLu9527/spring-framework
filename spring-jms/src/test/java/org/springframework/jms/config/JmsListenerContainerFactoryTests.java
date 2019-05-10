@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +21,7 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.transaction.TransactionManager;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.jms.StubConnectionFactory;
@@ -42,8 +40,11 @@ import org.springframework.jms.support.destination.DynamicDestinationResolver;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Stephane Nicoll
@@ -57,10 +58,6 @@ public class JmsListenerContainerFactoryTests {
 	private final MessageConverter messageConverter = new SimpleMessageConverter();
 
 	private final TransactionManager transactionManager = mock(TransactionManager.class);
-
-
-	@Rule
-	public final ExpectedException thrown = ExpectedException.none();
 
 
 	@Test
@@ -130,8 +127,8 @@ public class JmsListenerContainerFactoryTests {
 
 		SimpleJmsListenerEndpoint endpoint = new SimpleJmsListenerEndpoint();
 		endpoint.setMessageListener(new MessageListenerAdapter());
-		this.thrown.expect(IllegalStateException.class);
-		factory.createListenerContainer(endpoint);
+		assertThatIllegalStateException().isThrownBy(() ->
+				factory.createListenerContainer(endpoint));
 	}
 
 	@Test
@@ -148,6 +145,21 @@ public class JmsListenerContainerFactoryTests {
 		DefaultMessageListenerContainer container = factory.createListenerContainer(endpoint);
 
 		assertSame(backOff, new DirectFieldAccessor(container).getPropertyValue("backOff"));
+	}
+
+	@Test
+	public void endpointConcurrencyTakesPrecedence() {
+		DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+		factory.setConcurrency("2-10");
+
+		SimpleJmsListenerEndpoint endpoint = new SimpleJmsListenerEndpoint();
+		MessageListener messageListener = new MessageListenerAdapter();
+		endpoint.setMessageListener(messageListener);
+		endpoint.setDestination("myQueue");
+		endpoint.setConcurrency("4-6");
+		DefaultMessageListenerContainer container = factory.createListenerContainer(endpoint);
+		assertEquals(4, container.getConcurrentConsumers());
+		assertEquals(6, container.getMaxConcurrentConsumers());
 	}
 
 

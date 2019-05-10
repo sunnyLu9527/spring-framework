@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.transaction.interceptor;
 
 import java.lang.reflect.Method;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -33,8 +34,17 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.interceptor.TransactionAspectSupport.TransactionInfo;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Mock object based tests for transaction aspects.
@@ -57,16 +67,11 @@ public abstract class AbstractTransactionAspectTests {
 	protected Method setNameMethod;
 
 
-	public AbstractTransactionAspectTests() {
-		try {
-			// Cache the methods we'll be testing
-			exceptionalMethod = ITestBean.class.getMethod("exceptional", new Class[] { Throwable.class });
-			getNameMethod = ITestBean.class.getMethod("getName", (Class[]) null);
-			setNameMethod = ITestBean.class.getMethod("setName", new Class[] { String.class} );
-		}
-		catch (NoSuchMethodException ex) {
-			throw new RuntimeException("Shouldn't happen", ex);
-		}
+	@Before
+	public void setup() throws Exception {
+		exceptionalMethod = ITestBean.class.getMethod("exceptional", Throwable.class);
+		getNameMethod = ITestBean.class.getMethod("getName");
+		setNameMethod = ITestBean.class.getMethod("setName", String.class);
 	}
 
 
@@ -410,7 +415,7 @@ public abstract class AbstractTransactionAspectTests {
 		}
 		catch (Throwable t) {
 			if (rollbackException) {
-				assertEquals("Caught wrong exception", tex, t );
+				assertEquals("Caught wrong exception", tex, t);
 			}
 			else {
 				assertEquals("Caught wrong exception", ex, t);

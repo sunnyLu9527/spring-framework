@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,9 @@
 package org.springframework.web.reactive.result.method.annotation;
 
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import reactor.core.publisher.Mono;
 
@@ -52,7 +53,7 @@ import org.springframework.web.server.ServerWebExchange;
  */
 public class ResponseEntityResultHandler extends AbstractMessageWriterResultHandler implements HandlerResultHandler {
 
-	private static final List<HttpMethod> SAFE_METHODS = Arrays.asList(HttpMethod.GET, HttpMethod.HEAD);
+	private static final Set<HttpMethod> SAFE_METHODS = EnumSet.of(HttpMethod.GET, HttpMethod.HEAD);
 
 
 	/**
@@ -88,14 +89,14 @@ public class ResponseEntityResultHandler extends AbstractMessageWriterResultHand
 		}
 		ReactiveAdapter adapter = getAdapter(result);
 		return adapter != null && !adapter.isNoValue() &&
-				isSupportedType(result.getReturnType().getGeneric().resolve(Object.class));
+				isSupportedType(result.getReturnType().getGeneric().toClass());
 	}
 
 	@Nullable
 	private static Class<?> resolveReturnValueType(HandlerResult result) {
-		Class<?> valueType = result.getReturnType().getRawClass();
+		Class<?> valueType = result.getReturnType().toClass();
 		Object value = result.getReturnValue();
-		if ((valueType == null || valueType.equals(Object.class)) && value != null) {
+		if (valueType == Object.class && value != null) {
 			valueType = value.getClass();
 		}
 		return valueType;
@@ -132,7 +133,7 @@ public class ResponseEntityResultHandler extends AbstractMessageWriterResultHand
 				httpEntity = (HttpEntity<?>) returnValue;
 			}
 			else if (returnValue instanceof HttpHeaders) {
-				httpEntity = new ResponseEntity<Void>((HttpHeaders) returnValue, HttpStatus.OK);
+				httpEntity = new ResponseEntity<>((HttpHeaders) returnValue, HttpStatus.OK);
 			}
 			else {
 				throw new IllegalArgumentException(
@@ -152,14 +153,12 @@ public class ResponseEntityResultHandler extends AbstractMessageWriterResultHand
 
 			HttpHeaders entityHeaders = httpEntity.getHeaders();
 			HttpHeaders responseHeaders = exchange.getResponse().getHeaders();
-
 			if (!entityHeaders.isEmpty()) {
 				entityHeaders.entrySet().stream()
-						.filter(entry -> !responseHeaders.containsKey(entry.getKey()))
 						.forEach(entry -> responseHeaders.put(entry.getKey(), entry.getValue()));
 			}
 
-			if(httpEntity.getBody() == null || returnValue instanceof HttpHeaders) {
+			if (httpEntity.getBody() == null || returnValue instanceof HttpHeaders) {
 				return exchange.getResponse().setComplete();
 			}
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,11 +34,13 @@ import org.springframework.mock.web.test.MockServletContext;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 
 /**
  * Unit tests for {@link ResourceUrlProvider}.
@@ -81,13 +83,23 @@ public class ResourceUrlProviderTests {
 		request.setContextPath("/");
 		request.setRequestURI("/");
 
-		String url = "/resources/foo.css?foo=bar&url=http://example.org";
+		String url = "/resources/foo.css?foo=bar&url=https://example.org";
 		String resolvedUrl = this.urlProvider.getForRequestUrl(request, url);
-		assertEquals("/resources/foo.css?foo=bar&url=http://example.org", resolvedUrl);
+		assertEquals("/resources/foo.css?foo=bar&url=https://example.org", resolvedUrl);
 
 		url = "/resources/foo.css#hash";
 		resolvedUrl = this.urlProvider.getForRequestUrl(request, url);
 		assertEquals("/resources/foo.css#hash", resolvedUrl);
+	}
+
+	@Test // SPR-16526
+	public void getStaticResourceWithMissingContextPath() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setContextPath("/contextpath-longer-than-request-path");
+		request.setRequestURI("/contextpath-longer-than-request-path/style.css");
+		String url = "/resources/foo.css";
+		String resolvedUrl = this.urlProvider.getForRequestUrl(request, url);
+		assertNull(resolvedUrl);
 	}
 
 	@Test
@@ -128,6 +140,7 @@ public class ResourceUrlProviderTests {
 	}
 
 	@Test // SPR-12592
+	@SuppressWarnings("resource")
 	public void initializeOnce() throws Exception {
 		AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
 		context.setServletContext(new MockServletContext());
@@ -143,7 +156,7 @@ public class ResourceUrlProviderTests {
 	public void getForLookupPathShouldNotFailIfPathContainsDoubleSlashes() {
 		// given
 		ResourceResolver mockResourceResolver = mock(ResourceResolver.class);
-		when(mockResourceResolver.resolveUrlPath(any(), any(), any())).thenReturn("some-path");
+		given(mockResourceResolver.resolveUrlPath(any(), any(), any())).willReturn("some-path");
 
 		ResourceHttpRequestHandler handler = new ResourceHttpRequestHandler();
 		handler.getResourceResolvers().add(mockResourceResolver);

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,14 +21,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.core.annotation.AnnotationUtilsTests.ImplicitAliasesContextConfig;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link AnnotationAttributes}.
@@ -41,9 +45,6 @@ import static org.junit.Assert.*;
 public class AnnotationAttributesTests {
 
 	private AnnotationAttributes attributes = new AnnotationAttributes();
-
-	@Rule
-	public final ExpectedException exception = ExpectedException.none();
 
 
 	@Test
@@ -79,9 +80,9 @@ public class AnnotationAttributesTests {
 	@Test
 	public void unresolvableClass() throws Exception {
 		attributes.put("unresolvableClass", new ClassNotFoundException("myclass"));
-		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage(containsString("myclass"));
-		attributes.getClass("unresolvableClass");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				attributes.getClass("unresolvableClass"))
+			.withMessageContaining("myclass");
 	}
 
 	@Test
@@ -131,31 +132,31 @@ public class AnnotationAttributesTests {
 
 	@Test
 	public void getEnumWithNullAttributeName() {
-		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage("must not be null or empty");
-		attributes.getEnum(null);
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				attributes.getEnum(null))
+			.withMessageContaining("must not be null or empty");
 	}
 
 	@Test
 	public void getEnumWithEmptyAttributeName() {
-		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage("must not be null or empty");
-		attributes.getEnum("");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				attributes.getEnum(""))
+			.withMessageContaining("must not be null or empty");
 	}
 
 	@Test
 	public void getEnumWithUnknownAttributeName() {
-		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage("Attribute 'bogus' not found");
-		attributes.getEnum("bogus");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				attributes.getEnum("bogus"))
+			.withMessageContaining("Attribute 'bogus' not found");
 	}
 
 	@Test
 	public void getEnumWithTypeMismatch() {
 		attributes.put("color", "RED");
-		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage(containsString("Attribute 'color' is of type [String], but [Enum] was expected"));
-		attributes.getEnum("color");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				attributes.getEnum("color"))
+			.withMessageContaining("Attribute 'color' is of type String, but Enum was expected");
 	}
 
 	@Test

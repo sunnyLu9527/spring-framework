@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,17 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessorAdapter;
+import org.springframework.beans.factory.support.AbstractBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for SPR-8954, in which a custom {@link InstantiationAwareBeanPostProcessor}
@@ -90,10 +95,11 @@ public class Spr8954Tests {
 		}
 	}
 
+
 	static class FooFactoryBean implements FactoryBean<Foo>, AnInterface {
 
 		@Override
-		public Foo getObject() throws Exception {
+		public Foo getObject() {
 			return new Foo();
 		}
 
@@ -108,24 +114,29 @@ public class Spr8954Tests {
 		}
 	}
 
+
 	interface AnInterface {
 	}
+
 
 	static class Foo {
 	}
 
+
 	interface PredictedType {
 	}
 
-	static class PredictedTypeImpl implements PredictedType {
-	}
 
 	static class PredictingBPP extends InstantiationAwareBeanPostProcessorAdapter {
 
 		@Override
 		public Class<?> predictBeanType(Class<?> beanClass, String beanName) {
-			return FactoryBean.class.isAssignableFrom(beanClass) ?
-					PredictedType.class : null;
+			return FactoryBean.class.isAssignableFrom(beanClass) ? PredictedType.class : null;
+		}
+
+		@Override
+		public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+			return pvs;
 		}
 	}
 

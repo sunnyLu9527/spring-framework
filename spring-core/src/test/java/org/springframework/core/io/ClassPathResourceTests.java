@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,8 +23,13 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests that serve as regression tests for the bugs described in SPR-6888
@@ -107,6 +112,17 @@ public class ClassPathResourceTests {
 	public void preserveLeadingSlashForClassRelativeAccess() {
 		assertEquals("/test.html", new ClassPathResource("/test.html", getClass()).getPath());
 		assertEquals("/test.html", ((ClassPathResource) new ClassPathResource("", getClass()).createRelative("/test.html")).getPath());
+	}
+
+	@Test
+	public void directoryNotReadable() {
+		Resource fileDir = new ClassPathResource("org/springframework/core");
+		assertTrue(fileDir.exists());
+		assertFalse(fileDir.isReadable());
+
+		Resource jarDir = new ClassPathResource("reactor/core");
+		assertTrue(jarDir.exists());
+		assertFalse(jarDir.isReadable());
 	}
 
 

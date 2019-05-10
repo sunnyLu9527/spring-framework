@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,11 +20,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Arjen Poutsma
@@ -151,6 +155,101 @@ public class DataBufferTests extends AbstractDataBufferAllocatingTestCase {
 	}
 
 	@Test
+	public void writeNullString() {
+		DataBuffer buffer = createDataBuffer(1);
+		try {
+			buffer.write(null, StandardCharsets.UTF_8);
+			fail("IllegalArgumentException expected");
+		}
+		catch (IllegalArgumentException exc) {
+		}
+		finally {
+			release(buffer);
+		}
+	}
+
+	@Test
+	public void writeNullCharset() {
+		DataBuffer buffer = createDataBuffer(1);
+		try {
+			buffer.write("test", null);
+			fail("IllegalArgumentException expected");
+		}
+		catch (IllegalArgumentException exc) {
+		}
+		finally {
+			release(buffer);
+		}
+	}
+
+	@Test
+	public void writeEmptyString() {
+		DataBuffer buffer = createDataBuffer(1);
+		buffer.write("", StandardCharsets.UTF_8);
+
+		assertEquals(0, buffer.readableByteCount());
+
+		release(buffer);
+	}
+
+	@Test
+	public void writeUtf8String() {
+		DataBuffer buffer = createDataBuffer(6);
+		buffer.write("Spring", StandardCharsets.UTF_8);
+
+		byte[] result = new byte[6];
+		buffer.read(result);
+
+		assertArrayEquals("Spring".getBytes(StandardCharsets.UTF_8), result);
+		release(buffer);
+	}
+
+	@Test
+	public void writeUtf8StringOutGrowsCapacity() {
+		DataBuffer buffer = createDataBuffer(5);
+		buffer.write("Spring €", StandardCharsets.UTF_8);
+
+		byte[] result = new byte[10];
+		buffer.read(result);
+
+		assertArrayEquals("Spring €".getBytes(StandardCharsets.UTF_8), result);
+		release(buffer);
+	}
+
+	@Test
+	public void writeIsoString() {
+		DataBuffer buffer = createDataBuffer(3);
+		buffer.write("\u00A3", StandardCharsets.ISO_8859_1);
+
+		byte[] result = new byte[1];
+		buffer.read(result);
+
+		assertArrayEquals("\u00A3".getBytes(StandardCharsets.ISO_8859_1), result);
+		release(buffer);
+	}
+
+	@Test
+	public void writeMultipleUtf8String() {
+
+		DataBuffer buffer = createDataBuffer(1);
+		buffer.write("abc", StandardCharsets.UTF_8);
+		assertEquals(3, buffer.readableByteCount());
+
+		buffer.write("def", StandardCharsets.UTF_8);
+		assertEquals(6, buffer.readableByteCount());
+
+		buffer.write("ghi", StandardCharsets.UTF_8);
+		assertEquals(9, buffer.readableByteCount());
+
+		byte[] result = new byte[9];
+		buffer.read(result);
+
+		assertArrayEquals("abcdefghi".getBytes(), result);
+
+		release(buffer);
+	}
+
+	@Test
 	public void inputStream() throws IOException {
 		DataBuffer buffer = createDataBuffer(4);
 		buffer.write(new byte[]{'a', 'b', 'c', 'd', 'e'});
@@ -180,6 +279,28 @@ public class DataBufferTests extends AbstractDataBufferAllocatingTestCase {
 		assertEquals(-1, inputStream.read(bytes));
 
 		release(buffer);
+	}
+
+	@Test
+	public void inputStreamReleaseOnClose() throws IOException {
+		DataBuffer buffer = createDataBuffer(3);
+		byte[] bytes = {'a', 'b', 'c'};
+		buffer.write(bytes);
+
+		InputStream inputStream = buffer.asInputStream(true);
+
+		try {
+			byte[] result = new byte[3];
+			int len = inputStream.read(result);
+			assertEquals(3, len);
+			assertArrayEquals(bytes, result);
+		}
+		finally {
+			inputStream.close();
+		}
+
+		// AbstractDataBufferAllocatingTestCase.LeakDetector will verify the buffer's release
+
 	}
 
 	@Test
@@ -462,6 +583,37 @@ public class DataBufferTests extends AbstractDataBufferAllocatingTestCase {
 	}
 
 	@Test
+	public void retainedSlice() {
+		DataBuffer buffer = createDataBuffer(3);
+		buffer.write(new byte[]{'a', 'b'});
+
+		DataBuffer slice = buffer.retainedSlice(1, 2);
+		assertEquals(2, slice.readableByteCount());
+		try {
+			slice.write((byte) 0);
+			fail("Exception expected");
+		}
+		catch (Exception ignored) {
+		}
+		buffer.write((byte) 'c');
+
+		assertEquals(3, buffer.readableByteCount());
+		byte[] result = new byte[3];
+		buffer.read(result);
+
+		assertArrayEquals(new byte[]{'a', 'b', 'c'}, result);
+
+		assertEquals(2, slice.readableByteCount());
+		result = new byte[2];
+		slice.read(result);
+
+		assertArrayEquals(new byte[]{'b', 'c'}, result);
+
+
+		release(buffer, slice);
+	}
+
+	@Test
 	public void spr16351() {
 		DataBuffer buffer = createDataBuffer(6);
 		byte[] bytes = {'a', 'b', 'c', 'd', 'e', 'f'};
@@ -479,5 +631,41 @@ public class DataBufferTests extends AbstractDataBufferAllocatingTestCase {
 		release(buffer);
 	}
 
+	@Test
+	public void join() {
+		DataBuffer composite = this.bufferFactory.join(Arrays.asList(stringBuffer("a"),
+				stringBuffer("b"), stringBuffer("c")));
+		assertEquals(3, composite.readableByteCount());
+		byte[] bytes = new byte[3];
+		composite.read(bytes);
+
+		assertArrayEquals(new byte[] {'a','b','c'}, bytes);
+
+		release(composite);
+	}
+
+	@Test
+	public void getByte() {
+		DataBuffer buffer = stringBuffer("abc");
+
+		assertEquals('a', buffer.getByte(0));
+		assertEquals('b', buffer.getByte(1));
+		assertEquals('c', buffer.getByte(2));
+		try {
+			buffer.getByte(-1);
+			fail("IndexOutOfBoundsException expected");
+		}
+		catch (IndexOutOfBoundsException ignored) {
+		}
+
+		try {
+			buffer.getByte(3);
+			fail("IndexOutOfBoundsException expected");
+		}
+		catch (IndexOutOfBoundsException ignored) {
+		}
+
+		release(buffer);
+	}
 
 }

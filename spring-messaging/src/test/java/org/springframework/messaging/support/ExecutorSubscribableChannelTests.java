@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,7 @@ package org.springframework.messaging.support;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -33,9 +31,20 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Unit tests for {@link ExecutorSubscribableChannel}.
@@ -43,9 +52,6 @@ import static org.mockito.BDDMockito.*;
  * @author Phillip Webb
  */
 public class ExecutorSubscribableChannelTests {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private ExecutorSubscribableChannel channel = new ExecutorSubscribableChannel();
 
@@ -65,11 +71,12 @@ public class ExecutorSubscribableChannelTests {
 		MockitoAnnotations.initMocks(this);
 	}
 
+
 	@Test
-	public void messageMustNotBeNull() throws Exception {
-		thrown.expect(IllegalArgumentException.class);
-		thrown.expectMessage("Message must not be null");
-		this.channel.send(null);
+	public void messageMustNotBeNull() {
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				this.channel.send(null))
+			.withMessageContaining("Message must not be null");
 	}
 
 	@Test
@@ -84,7 +91,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 	@Test
-	public void sendWithExecutor() throws Exception {
+	public void sendWithExecutor() {
 		BeforeHandleInterceptor interceptor = new BeforeHandleInterceptor();
 		TaskExecutor executor = mock(TaskExecutor.class);
 		ExecutorSubscribableChannel testChannel = new ExecutorSubscribableChannel(executor);
@@ -100,7 +107,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 	@Test
-	public void subscribeTwice() throws Exception {
+	public void subscribeTwice()  {
 		assertThat(this.channel.subscribe(this.handler), equalTo(true));
 		assertThat(this.channel.subscribe(this.handler), equalTo(false));
 		this.channel.send(this.message);
@@ -108,7 +115,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 	@Test
-	public void unsubscribeTwice() throws Exception {
+	public void unsubscribeTwice()  {
 		this.channel.subscribe(this.handler);
 		assertThat(this.channel.unsubscribe(this.handler), equalTo(true));
 		assertThat(this.channel.unsubscribe(this.handler), equalTo(false));
@@ -117,7 +124,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 	@Test
-	public void failurePropagates() throws Exception {
+	public void failurePropagates()  {
 		RuntimeException ex = new RuntimeException();
 		willThrow(ex).given(this.handler).handleMessage(this.message);
 		MessageHandler secondHandler = mock(MessageHandler.class);
@@ -133,7 +140,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 	@Test
-	public void concurrentModification() throws Exception {
+	public void concurrentModification()  {
 		this.channel.subscribe(message1 -> channel.unsubscribe(handler));
 		this.channel.subscribe(this.handler);
 		this.channel.send(this.message);
@@ -186,8 +193,7 @@ public class ExecutorSubscribableChannelTests {
 	}
 
 
-	private abstract static class AbstractTestInterceptor extends ChannelInterceptorAdapter
-			implements ExecutorChannelInterceptor {
+	private abstract static class AbstractTestInterceptor implements ChannelInterceptor, ExecutorChannelInterceptor {
 
 		private AtomicInteger counter = new AtomicInteger();
 
@@ -209,7 +215,9 @@ public class ExecutorSubscribableChannelTests {
 		}
 
 		@Override
-		public void afterMessageHandled(Message<?> message, MessageChannel channel, MessageHandler handler, Exception ex) {
+		public void afterMessageHandled(
+				Message<?> message, MessageChannel channel, MessageHandler handler, Exception ex) {
+
 			this.afterHandledInvoked = true;
 		}
 	}

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,9 +20,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -34,7 +32,10 @@ import org.springframework.tests.sample.beans.SerializablePerson;
 import org.springframework.tests.sample.beans.SideEffectBean;
 import org.springframework.util.SerializationTestUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for pooling invoker interceptor.
@@ -47,9 +48,6 @@ import static org.junit.Assert.*;
  * @author Stephane Nicoll
  */
 public class CommonsPool2TargetSourceTests {
-
-	@Rule
-	public final ExpectedException thrown = ExpectedException.none();
 
 	/**
 	 * Initial count value set in bean factory XML
@@ -84,7 +82,7 @@ public class CommonsPool2TargetSourceTests {
 		// Just check that it works--we can't make assumptions
 		// about the count
 		pooled.doWork();
-		//assertEquals(INITIAL_COUNT + 1, apartment.getCount() );
+		//assertEquals(INITIAL_COUNT + 1, apartment.getCount());
 	}
 
 	@Test
@@ -161,7 +159,7 @@ public class CommonsPool2TargetSourceTests {
 			// desired
 		}
 
-		// lets now release an object and try to accquire a new one
+		// lets now release an object and try to acquire a new one
 		targetSource.releaseTarget(pooledInstances[9]);
 		pooledInstances[9] = targetSource.getTarget();
 
@@ -194,7 +192,7 @@ public class CommonsPool2TargetSourceTests {
 			// desired
 		}
 
-		// lets now release an object and try to accquire a new one
+		// lets now release an object and try to acquire a new one
 		targetSource.releaseTarget(pooledInstances[9]);
 		pooledInstances[9] = targetSource.getTarget();
 

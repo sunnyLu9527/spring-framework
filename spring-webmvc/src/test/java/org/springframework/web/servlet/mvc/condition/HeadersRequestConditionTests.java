@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,11 @@ import org.junit.Test;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.web.servlet.mvc.condition.HeadersRequestCondition.HeaderExpression;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Arjen Poutsma
@@ -34,7 +38,7 @@ public class HeadersRequestConditionTests {
 	public void headerEquals() {
 		assertEquals(new HeadersRequestCondition("foo"), new HeadersRequestCondition("foo"));
 		assertEquals(new HeadersRequestCondition("foo"), new HeadersRequestCondition("FOO"));
-		assertFalse(new HeadersRequestCondition("foo").equals(new HeadersRequestCondition("bar")));
+		assertNotEquals(new HeadersRequestCondition("foo"), new HeadersRequestCondition("bar"));
 		assertEquals(new HeadersRequestCondition("foo=bar"), new HeadersRequestCondition("foo=bar"));
 		assertEquals(new HeadersRequestCondition("foo=bar"), new HeadersRequestCondition("FOO=bar"));
 	}
@@ -121,7 +125,7 @@ public class HeadersRequestConditionTests {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 
 		HeadersRequestCondition condition1 = new HeadersRequestCondition("foo", "bar", "baz");
-		HeadersRequestCondition condition2 = new HeadersRequestCondition("foo", "bar");
+		HeadersRequestCondition condition2 = new HeadersRequestCondition("foo=a", "bar");
 
 		int result = condition1.compareTo(condition2, request);
 		assertTrue("Invalid comparison result: " + result, result < 0);
@@ -130,6 +134,30 @@ public class HeadersRequestConditionTests {
 		assertTrue("Invalid comparison result: " + result, result > 0);
 	}
 
+	@Test // SPR-16674
+	public void compareToWithMoreSpecificMatchByValue() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+
+		HeadersRequestCondition condition1 = new HeadersRequestCondition("foo=a");
+		HeadersRequestCondition condition2 = new HeadersRequestCondition("foo");
+
+		int result = condition1.compareTo(condition2, request);
+		assertTrue("Invalid comparison result: " + result, result < 0);
+
+		result = condition2.compareTo(condition1, request);
+		assertTrue("Invalid comparison result: " + result, result > 0);
+	}
+
+	@Test
+	public void compareToWithNegatedMatch() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+
+		HeadersRequestCondition condition1 = new HeadersRequestCondition("foo!=a");
+		HeadersRequestCondition condition2 = new HeadersRequestCondition("foo");
+
+		assertEquals("Negated match should not count as more specific",
+				0, condition1.compareTo(condition2, request));
+	}
 
 	@Test
 	public void combine() {

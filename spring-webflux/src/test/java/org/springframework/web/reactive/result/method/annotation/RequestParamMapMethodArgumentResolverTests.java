@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import static org.springframework.web.method.MvcAnnotationPredicates.requestPara
 
 /**
  * Unit tests for {@link RequestParamMapMethodArgumentResolver}.
+ *
  * @author Rossen Stoyanchev
  */
 public class RequestParamMapMethodArgumentResolverTests {
@@ -73,12 +74,12 @@ public class RequestParamMapMethodArgumentResolverTests {
 		catch (IllegalStateException ex) {
 			assertTrue("Unexpected error message:\n" + ex.getMessage(),
 					ex.getMessage().startsWith(
-							"RequestParamMapMethodArgumentResolver doesn't support reactive type wrapper"));
+							"RequestParamMapMethodArgumentResolver does not support reactive type wrapper"));
 		}
 	}
 
 	@Test
-	public void resolveMapArgumentWithQueryString() throws Exception {
+	public void resolveMapArgumentWithQueryString() {
 		MethodParameter param = this.testMethod.annot(requestParam().name("")).arg(Map.class);
 		Object result= resolve(param, MockServerWebExchange.from(MockServerHttpRequest.get("/path?foo=bar")));
 		assertTrue(result instanceof Map);
@@ -86,7 +87,7 @@ public class RequestParamMapMethodArgumentResolverTests {
 	}
 
 	@Test
-	public void resolveMultiValueMapArgument() throws Exception {
+	public void resolveMultiValueMapArgument() {
 		MethodParameter param = this.testMethod.annotPresent(RequestParam.class).arg(MultiValueMap.class);
 		ServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/path?foo=bar&foo=baz"));
 		Object result= resolve(param, exchange);

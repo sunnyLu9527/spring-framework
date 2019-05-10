@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,18 +21,19 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link StreamConverter}.
@@ -41,9 +42,6 @@ import static org.junit.Assert.*;
  * @since 4.2
  */
 public class StreamConverterTests {
-
-	@Rule
-	public final ExpectedException thrown = ExpectedException.none();
 
 	private final GenericConversionService conversionService = new GenericConversionService();
 
@@ -63,7 +61,7 @@ public class StreamConverterTests {
 	public void convertFromStreamToList() throws NoSuchFieldException {
 		this.conversionService.addConverter(Number.class, String.class, new ObjectToStringConverter());
 		Stream<Integer> stream = Arrays.asList(1, 2, 3).stream();
-		TypeDescriptor listOfStrings = new TypeDescriptor(Types.class.getField("listOfStrings")); ;
+		TypeDescriptor listOfStrings = new TypeDescriptor(Types.class.getField("listOfStrings"));
 		Object result = this.conversionService.convert(stream, listOfStrings);
 
 		assertNotNull("Converted object must not be null", result);
@@ -80,7 +78,7 @@ public class StreamConverterTests {
 	public void convertFromStreamToArray() throws NoSuchFieldException {
 		this.conversionService.addConverterFactory(new NumberToNumberConverterFactory());
 		Stream<Integer> stream = Arrays.asList(1, 2, 3).stream();
-		TypeDescriptor arrayOfLongs = new TypeDescriptor(Types.class.getField("arrayOfLongs")); ;
+		TypeDescriptor arrayOfLongs = new TypeDescriptor(Types.class.getField("arrayOfLongs"));
 		Object result = this.conversionService.convert(stream, arrayOfLongs);
 
 		assertNotNull("Converted object must not be null", result);
@@ -95,7 +93,7 @@ public class StreamConverterTests {
 	@Test
 	public void convertFromStreamToRawList() throws NoSuchFieldException {
 		Stream<Integer> stream = Arrays.asList(1, 2, 3).stream();
-		TypeDescriptor listOfStrings = new TypeDescriptor(Types.class.getField("rawList")); ;
+		TypeDescriptor listOfStrings = new TypeDescriptor(Types.class.getField("rawList"));
 		Object result = this.conversionService.convert(stream, listOfStrings);
 
 		assertNotNull("Converted object must not be null", result);
@@ -111,11 +109,10 @@ public class StreamConverterTests {
 	@Test
 	public void convertFromStreamToArrayNoConverter() throws NoSuchFieldException {
 		Stream<Integer> stream = Arrays.asList(1, 2, 3).stream();
-		TypeDescriptor arrayOfLongs = new TypeDescriptor(Types.class.getField("arrayOfLongs")); ;
-
-		thrown.expect(ConversionFailedException.class);
-		thrown.expectCause(is(instanceOf(ConverterNotFoundException.class)));
-		this.conversionService.convert(stream, arrayOfLongs);
+		TypeDescriptor arrayOfLongs = new TypeDescriptor(Types.class.getField("arrayOfLongs"));
+		assertThatExceptionOfType(ConversionFailedException.class).isThrownBy(() ->
+				this.conversionService.convert(stream, arrayOfLongs))
+			.withCauseInstanceOf(ConverterNotFoundException.class);
 	}
 
 	@Test
@@ -123,14 +120,14 @@ public class StreamConverterTests {
 	public void convertFromListToStream() throws NoSuchFieldException {
 		this.conversionService.addConverterFactory(new StringToNumberConverterFactory());
 		List<String> stream = Arrays.asList("1", "2", "3");
-		TypeDescriptor streamOfInteger = new TypeDescriptor(Types.class.getField("streamOfIntegers")); ;
+		TypeDescriptor streamOfInteger = new TypeDescriptor(Types.class.getField("streamOfIntegers"));
 		Object result = this.conversionService.convert(stream, streamOfInteger);
 
 		assertNotNull("Converted object must not be null", result);
 		assertTrue("Converted object must be a stream", result instanceof Stream);
 		@SuppressWarnings("unchecked")
 		Stream<Integer> content = (Stream<Integer>) result;
-		assertEquals(6, content.mapToInt((x) -> x).sum());
+		assertEquals(6, content.mapToInt(x -> x).sum());
 	}
 
 	@Test
@@ -143,7 +140,7 @@ public class StreamConverterTests {
 				return source == 1;
 			}
 		});
-		TypeDescriptor streamOfBoolean = new TypeDescriptor(Types.class.getField("streamOfBooleans")); ;
+		TypeDescriptor streamOfBoolean = new TypeDescriptor(Types.class.getField("streamOfBooleans"));
 		Object result = this.conversionService.convert(stream, streamOfBoolean);
 
 		assertNotNull("Converted object must not be null", result);
@@ -157,7 +154,7 @@ public class StreamConverterTests {
 	@SuppressWarnings("resource")
 	public void convertFromListToRawStream() throws NoSuchFieldException {
 		List<String> stream = Arrays.asList("1", "2", "3");
-		TypeDescriptor streamOfInteger = new TypeDescriptor(Types.class.getField("rawStream")); ;
+		TypeDescriptor streamOfInteger = new TypeDescriptor(Types.class.getField("rawStream"));
 		Object result = this.conversionService.convert(stream, streamOfInteger);
 
 		assertNotNull("Converted object must not be null", result);
@@ -178,9 +175,10 @@ public class StreamConverterTests {
 
 	@Test
 	public void shouldFailToConvertIfNoStream() throws NoSuchFieldException {
-		thrown.expect(IllegalStateException.class);
-		this.streamConverter.convert(new Object(), new TypeDescriptor(Types.class.getField("listOfStrings")),
-				new TypeDescriptor(Types.class.getField("arrayOfLongs")));
+		TypeDescriptor sourceType = new TypeDescriptor(Types.class.getField("listOfStrings"));
+		TypeDescriptor targetType = new TypeDescriptor(Types.class.getField("arrayOfLongs"));
+		assertThatIllegalStateException().isThrownBy(() ->
+			this.streamConverter.convert(new Object(), sourceType, targetType));
 	}
 
 
