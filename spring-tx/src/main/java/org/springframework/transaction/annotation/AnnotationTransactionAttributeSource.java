@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,15 +56,11 @@ import org.springframework.util.ClassUtils;
 public class AnnotationTransactionAttributeSource extends AbstractFallbackTransactionAttributeSource
 		implements Serializable {
 
-	private static final boolean jta12Present;
+	private static final boolean jta12Present = ClassUtils.isPresent(
+			"javax.transaction.Transactional", AnnotationTransactionAttributeSource.class.getClassLoader());
 
-	private static final boolean ejb3Present;
-
-	static {
-		ClassLoader classLoader = AnnotationTransactionAttributeSource.class.getClassLoader();
-		jta12Present = ClassUtils.isPresent("javax.transaction.Transactional", classLoader);
-		ejb3Present = ClassUtils.isPresent("javax.ejb.TransactionAttribute", classLoader);
-	}
+	private static final boolean ejb3Present = ClassUtils.isPresent(
+			"javax.ejb.TransactionAttribute", AnnotationTransactionAttributeSource.class.getClassLoader());
 
 	private final boolean publicMethodsOnly;
 
@@ -138,16 +134,6 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 
 
 	@Override
-	public boolean isCandidateClass(Class<?> targetClass) {
-		for (TransactionAnnotationParser parser : this.annotationParsers) {
-			if (parser.isCandidateClass(targetClass)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
 	@Nullable
 	protected TransactionAttribute findTransactionAttribute(Class<?> clazz) {
 		return determineTransactionAttribute(clazz);
@@ -171,8 +157,8 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 	 */
 	@Nullable
 	protected TransactionAttribute determineTransactionAttribute(AnnotatedElement element) {
-		for (TransactionAnnotationParser parser : this.annotationParsers) {
-			TransactionAttribute attr = parser.parseTransactionAnnotation(element);
+		for (TransactionAnnotationParser annotationParser : this.annotationParsers) {
+			TransactionAttribute attr = annotationParser.parseTransactionAnnotation(element);
 			if (attr != null) {
 				return attr;
 			}

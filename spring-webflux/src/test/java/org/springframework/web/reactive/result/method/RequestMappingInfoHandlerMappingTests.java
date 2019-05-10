@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,11 @@ import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 import org.springframework.web.util.pattern.PathPattern;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.springframework.mock.http.server.reactive.test.MockServerHttpRequest.get;
 import static org.springframework.mock.http.server.reactive.test.MockServerHttpRequest.method;
 import static org.springframework.mock.http.server.reactive.test.MockServerHttpRequest.post;
@@ -80,9 +80,7 @@ import static org.springframework.web.reactive.result.method.RequestMappingInfo.
 
 /**
  * Unit tests for {@link RequestMappingInfoHandlerMapping}.
- *
  * @author Rossen Stoyanchev
- * @author Sam Brannen
  */
 public class RequestMappingInfoHandlerMappingTests {
 
@@ -172,8 +170,8 @@ public class RequestMappingInfoHandlerMappingTests {
 		Mono<Object> mono = this.handlerMapping.getHandler(exchange);
 
 		assertError(mono, UnsupportedMediaTypeStatusException.class,
-				ex -> assertEquals("415 UNSUPPORTED_MEDIA_TYPE " +
-						"\"Invalid mime type \"bogus\": does not contain '/'\"", ex.getMessage()));
+				ex -> assertEquals("Response status 415 with reason \"Invalid mime type \"bogus\": " +
+								"does not contain '/'\"", ex.getMessage()));
 	}
 
 	@Test  // SPR-8462
@@ -197,8 +195,8 @@ public class RequestMappingInfoHandlerMappingTests {
 		List<HttpMethod> allMethodExceptTrace = new ArrayList<>(Arrays.asList(HttpMethod.values()));
 		allMethodExceptTrace.remove(HttpMethod.TRACE);
 
-		testHttpOptions("/foo", EnumSet.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.OPTIONS));
-		testHttpOptions("/person/1", EnumSet.of(HttpMethod.PUT, HttpMethod.OPTIONS));
+		testHttpOptions("/foo", EnumSet.of(HttpMethod.GET, HttpMethod.HEAD));
+		testHttpOptions("/person/1", EnumSet.of(HttpMethod.PUT));
 		testHttpOptions("/persons", EnumSet.copyOf(allMethodExceptTrace));
 		testHttpOptions("/something", EnumSet.of(HttpMethod.PUT, HttpMethod.POST));
 	}
@@ -264,12 +262,14 @@ public class RequestMappingInfoHandlerMappingTests {
 		assertSame(handlerMethod, mapped);
 	}
 
-	@Test // gh-22543
+	@Test
 	public void handleMatchBestMatchingPatternAttributeNoPatternsDefined() {
-		ServerWebExchange exchange = MockServerWebExchange.from(get(""));
-		this.handlerMapping.handleMatch(paths().build(), handlerMethod, exchange);
-		PathPattern pattern = (PathPattern) exchange.getAttributes().get(BEST_MATCHING_PATTERN_ATTRIBUTE);
-		assertEquals("", pattern.getPatternString());
+		RequestMappingInfo key = paths().build();
+		ServerWebExchange exchange = MockServerWebExchange.from(get("/1/2"));
+		this.handlerMapping.handleMatch(key, handlerMethod, exchange);
+
+		PathPattern bestMatch = (PathPattern) exchange.getAttributes().get(BEST_MATCHING_PATTERN_ATTRIBUTE);
+		assertEquals("/1/2", bestMatch.getPatternString());
 	}
 
 	@Test
@@ -287,22 +287,6 @@ public class RequestMappingInfoHandlerMappingTests {
 		assertEquals(Arrays.asList("red", "blue", "green"), matrixVariables.get("colors"));
 		assertEquals("2012", matrixVariables.getFirst("year"));
 		assertEquals("cars", uriVariables.get("cars"));
-
-		// SPR-11897
-		exchange = MockServerWebExchange.from(get("/a=42;b=c"));
-		handleMatch(exchange, "/{foo}");
-
-		matrixVariables = getMatrixVariables(exchange, "foo");
-		uriVariables = getUriTemplateVariables(exchange);
-
-		// Unlike Spring MVC, WebFlux currently does not support APIs like
-		// "/foo/{ids}" and URL "/foo/id=1;id=2;id=3" where the whole path
-		// segment is a sequence of name-value pairs.
-
-		assertNotNull(matrixVariables);
-		assertEquals(1, matrixVariables.size());
-		assertEquals("c", matrixVariables.getFirst("b"));
-		assertEquals("a=42", uriVariables.get("foo"));
 	}
 
 	@Test

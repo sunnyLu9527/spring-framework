@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.springframework.web.reactive.function.server;
 
 import java.net.URI;
-import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,7 +30,6 @@ import java.util.function.Consumer;
 
 import reactor.core.publisher.Mono;
 
-import org.springframework.core.codec.Hints;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -52,7 +51,6 @@ import org.springframework.web.server.ServerWebExchange;
  * @author Arjen Poutsma
  * @author Juergen Hoeller
  * @since 5.0
- * @param <T> a self reference to the builder type
  */
 class DefaultEntityResponseBuilder<T> implements EntityResponse.Builder<T> {
 
@@ -158,20 +156,9 @@ class DefaultEntityResponseBuilder<T> implements EntityResponse.Builder<T> {
 	}
 
 	@Override
-	public EntityResponse.Builder<T> hints(Consumer<Map<String, Object>> hintsConsumer) {
-		hintsConsumer.accept(this.hints);
-		return this;
-	}
-
-	@Override
 	public EntityResponse.Builder<T> lastModified(ZonedDateTime lastModified) {
-		this.headers.setLastModified(lastModified);
-		return this;
-	}
-
-	@Override
-	public EntityResponse.Builder<T> lastModified(Instant lastModified) {
-		this.headers.setLastModified(lastModified);
+		ZonedDateTime gmt = lastModified.withZoneSameInstant(ZoneId.of("GMT"));
+		this.headers.setZonedDateTime(HttpHeaders.LAST_MODIFIED, gmt);
 		return this;
 	}
 
@@ -183,7 +170,10 @@ class DefaultEntityResponseBuilder<T> implements EntityResponse.Builder<T> {
 
 	@Override
 	public EntityResponse.Builder<T> cacheControl(CacheControl cacheControl) {
-		this.headers.setCacheControl(cacheControl);
+		String ccValue = cacheControl.getHeaderValue();
+		if (ccValue != null) {
+			this.headers.setCacheControl(ccValue);
+		}
 		return this;
 	}
 
@@ -208,14 +198,16 @@ class DefaultEntityResponseBuilder<T> implements EntityResponse.Builder<T> {
 
 		private final BodyInserter<T, ? super ServerHttpResponse> inserter;
 
+		private final Map<String, Object> hints;
 
 		public DefaultEntityResponse(int statusCode, HttpHeaders headers,
 				MultiValueMap<String, ResponseCookie> cookies, T entity,
 				BodyInserter<T, ? super ServerHttpResponse> inserter, Map<String, Object> hints) {
 
-			super(statusCode, headers, cookies, hints);
+			super(statusCode, headers, cookies);
 			this.entity = entity;
 			this.inserter = inserter;
+			this.hints = hints;
 		}
 
 		@Override
@@ -241,7 +233,6 @@ class DefaultEntityResponseBuilder<T> implements EntityResponse.Builder<T> {
 				}
 				@Override
 				public Map<String, Object> hints() {
-					hints.put(Hints.LOG_PREFIX_HINT, exchange.getLogPrefix());
 					return hints;
 				}
 			});

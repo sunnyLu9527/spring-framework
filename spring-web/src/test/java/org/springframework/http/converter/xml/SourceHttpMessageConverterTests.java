@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -46,12 +48,8 @@ import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.FileCopyUtils;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
+import static org.junit.Assert.*;
+import static org.xmlunit.matchers.CompareMatcher.*;
 
 /**
  * @author Arjen Poutsma
@@ -64,6 +62,9 @@ public class SourceHttpMessageConverterTests {
 	private SourceHttpMessageConverter<Source> converter;
 
 	private String bodyExternal;
+
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
 
 
 	@Before
@@ -131,9 +132,10 @@ public class SourceHttpMessageConverterTests {
 				"<root>&lol9;</root>";
 		MockHttpInputMessage inputMessage = new MockHttpInputMessage(content.getBytes("UTF-8"));
 
-		assertThatExceptionOfType(HttpMessageNotReadableException.class).isThrownBy(() ->
-				this.converter.read(DOMSource.class, inputMessage))
-			.withMessageContaining("DOCTYPE");
+		this.thrown.expect(HttpMessageNotReadableException.class);
+		this.thrown.expectMessage("DOCTYPE");
+
+		this.converter.read(DOMSource.class, inputMessage);
 	}
 
 	@Test
@@ -187,11 +189,12 @@ public class SourceHttpMessageConverterTests {
 		MockHttpInputMessage inputMessage = new MockHttpInputMessage(content.getBytes("UTF-8"));
 		SAXSource result = (SAXSource) this.converter.read(SAXSource.class, inputMessage);
 
+		this.thrown.expect(SAXException.class);
+		this.thrown.expectMessage("DOCTYPE");
+
 		InputSource inputSource = result.getInputSource();
 		XMLReader reader = result.getXMLReader();
-		assertThatExceptionOfType(SAXException.class).isThrownBy(() ->
-				reader.parse(inputSource))
-			.withMessageContaining("DOCTYPE");
+		reader.parse(inputSource);
 	}
 
 	@Test
@@ -259,9 +262,9 @@ public class SourceHttpMessageConverterTests {
 		streamReader.next();
 		String s = streamReader.getLocalName();
 		assertEquals("root", s);
-		assertThatExceptionOfType(XMLStreamException.class).isThrownBy(() ->
-				streamReader.getElementText())
-			.withMessageContaining("\"lol9\"");
+
+		this.thrown.expectMessage("\"lol9\"");
+		s = streamReader.getElementText();
 	}
 
 	@Test

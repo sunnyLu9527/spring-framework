@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,8 @@ import java.util.function.Function;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
 
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
@@ -56,17 +54,10 @@ public class MockServerHttpResponse extends AbstractServerHttpResponse {
 
 
 	public MockServerHttpResponse() {
-		this(new DefaultDataBufferFactory());
-	}
-
-	public MockServerHttpResponse(DataBufferFactory dataBufferFactory) {
-		super(dataBufferFactory);
+		super(new DefaultDataBufferFactory());
 		this.writeHandler = body -> {
-			// Avoid .then() which causes data buffers to be released
-			MonoProcessor<Void> completion = MonoProcessor.create();
-			this.body = body.doOnComplete(completion::onComplete).doOnError(completion::onError).cache();
-			this.body.subscribe();
-			return completion;
+			this.body = body.cache();
+			return this.body.then();
 		};
 	}
 
@@ -134,10 +125,8 @@ public class MockServerHttpResponse extends AbstractServerHttpResponse {
 	 * charset or "UTF-8" by default.
 	 */
 	public Mono<String> getBodyAsString() {
-
 		Charset charset = Optional.ofNullable(getHeaders().getContentType()).map(MimeType::getCharset)
 				.orElse(StandardCharsets.UTF_8);
-
 		return getBody()
 				.reduce(bufferFactory().allocateBuffer(), (previous, current) -> {
 					previous.write(current);
@@ -148,10 +137,8 @@ public class MockServerHttpResponse extends AbstractServerHttpResponse {
 	}
 
 	private static String bufferToString(DataBuffer buffer, Charset charset) {
-		Assert.notNull(charset, "'charset' must not be null");
 		byte[] bytes = new byte[buffer.readableByteCount()];
 		buffer.read(bytes);
-		DataBufferUtils.release(buffer);
 		return new String(bytes, charset);
 	}
 

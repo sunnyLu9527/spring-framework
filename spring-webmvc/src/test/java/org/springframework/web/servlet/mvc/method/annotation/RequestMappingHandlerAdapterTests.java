@@ -58,8 +58,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.ModelAndView;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link RequestMappingHandlerAdapter}.
@@ -260,6 +259,24 @@ public class RequestMappingHandlerAdapterTests {
 		assertEquals("{\"status\":400,\"message\":\"body\"}", this.response.getContentAsString());
 	}
 
+	@Test
+	public void jsonpResponseBodyAdvice() throws Exception {
+		List<HttpMessageConverter<?>> converters = new ArrayList<>();
+		converters.add(new MappingJackson2HttpMessageConverter());
+		this.handlerAdapter.setMessageConverters(converters);
+
+		this.webAppContext.registerSingleton("jsonpAdvice", JsonpAdvice.class);
+		this.webAppContext.refresh();
+
+		testJsonp("callback", true);
+		testJsonp("_callback", true);
+		testJsonp("_Call.bAcK", true);
+		testJsonp("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.", true);
+
+		testJsonp("<script>", false);
+		testJsonp("!foo!bar", false);
+	}
+
 	private HandlerMethod handlerMethod(Object handler, String methodName, Class<?>... paramTypes) throws Exception {
 		Method method = handler.getClass().getDeclaredMethod(methodName, paramTypes);
 		return new InvocableHandlerMethod(handler, method);
@@ -269,6 +286,26 @@ public class RequestMappingHandlerAdapterTests {
 		assertEquals(resolverCount, this.handlerAdapter.getArgumentResolvers().size());
 		assertEquals(initBinderResolverCount, this.handlerAdapter.getInitBinderArgumentResolvers().size());
 		assertEquals(handlerCount, this.handlerAdapter.getReturnValueHandlers().size());
+	}
+
+	private void testJsonp(String value, boolean validValue) throws Exception {
+
+		this.request = new MockHttpServletRequest("GET", "/");
+		this.request.addHeader("Accept", MediaType.APPLICATION_JSON_VALUE);
+		this.request.setParameter("c", value);
+		this.response = new MockHttpServletResponse();
+
+		HandlerMethod handlerMethod = handlerMethod(new SimpleController(), "handleWithResponseEntity");
+		this.handlerAdapter.afterPropertiesSet();
+		this.handlerAdapter.handle(this.request, this.response, handlerMethod);
+
+		assertEquals(200, this.response.getStatus());
+		if (validValue) {
+			assertEquals("/**/" + value + "({\"foo\":\"bar\"});", this.response.getContentAsString());
+		}
+		else {
+			assertEquals("{\"foo\":\"bar\"}", this.response.getContentAsString());
+		}
 	}
 
 
@@ -358,6 +395,7 @@ public class RequestMappingHandlerAdapterTests {
 	@ControllerAdvice
 	private static class ResponseCodeSuppressingAdvice extends AbstractMappingJacksonResponseBodyAdvice implements RequestBodyAdvice {
 
+		@SuppressWarnings("unchecked")
 		@Override
 		protected void beforeBodyWriteInternal(MappingJacksonValue bodyContainer, MediaType contentType,
 				MethodParameter returnType, ServerHttpRequest request, ServerHttpResponse response) {
@@ -399,6 +437,14 @@ public class RequestMappingHandlerAdapterTests {
 			return "default value for empty body";
 		}
 
+	}
+
+	@ControllerAdvice
+	private static class JsonpAdvice extends AbstractJsonpResponseBodyAdvice {
+
+		public JsonpAdvice() {
+			super("c");
+		}
 	}
 
 }

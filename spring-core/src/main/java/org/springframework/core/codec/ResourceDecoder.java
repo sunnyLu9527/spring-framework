@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,18 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
 /**
- * Decoder for {@link Resource Resources}.
+ * Decoder for {@link Resource}s.
  *
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
  * @since 5.0
  */
 public class ResourceDecoder extends AbstractDataBufferDecoder<Resource> {
-
-	/** Name of hint with a filename for the resource(e.g. from "Content-Disposition" HTTP header). */
-	public static String FILENAME_HINT = ResourceDecoder.class.getName() + ".filename";
 
 
 	public ResourceDecoder() {
@@ -52,8 +50,8 @@ public class ResourceDecoder extends AbstractDataBufferDecoder<Resource> {
 
 	@Override
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		return (Resource.class.isAssignableFrom(elementType.toClass()) &&
-				super.canDecode(elementType, mimeType));
+		Class<?> clazz = elementType.getRawClass();
+		return (clazz != null && Resource.class.isAssignableFrom(clazz) && super.canDecode(elementType, mimeType));
 	}
 
 	@Override
@@ -64,34 +62,21 @@ public class ResourceDecoder extends AbstractDataBufferDecoder<Resource> {
 	}
 
 	@Override
-	public Resource decode(DataBuffer dataBuffer, ResolvableType elementType,
+	protected Resource decodeDataBuffer(DataBuffer dataBuffer, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		byte[] bytes = new byte[dataBuffer.readableByteCount()];
 		dataBuffer.read(bytes);
 		DataBufferUtils.release(dataBuffer);
 
-		if (logger.isDebugEnabled()) {
-			logger.debug(Hints.getLogPrefix(hints) + "Read " + bytes.length + " bytes");
-		}
+		Class<?> clazz = elementType.getRawClass();
+		Assert.state(clazz != null, "No resource class");
 
-		Class<?> clazz = elementType.toClass();
-		String filename = hints != null ? (String) hints.get(FILENAME_HINT) : null;
 		if (clazz == InputStreamResource.class) {
-			return new InputStreamResource(new ByteArrayInputStream(bytes)) {
-				@Override
-				public String getFilename() {
-					return filename;
-				}
-			};
+			return new InputStreamResource(new ByteArrayInputStream(bytes));
 		}
 		else if (Resource.class.isAssignableFrom(clazz)) {
-			return new ByteArrayResource(bytes) {
-				@Override
-				public String getFilename() {
-					return filename;
-				}
-			};
+			return new ByteArrayResource(bytes);
 		}
 		else {
 			throw new IllegalStateException("Unsupported resource class: " + clazz);

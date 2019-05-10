@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,13 @@ import java.util.List;
 
 import org.junit.Test;
 
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests for {@link SpringFactoriesLoader}.
  *
  * @author Arjen Poutsma
  * @author Phillip Webb
- * @author Sam Brannen
  */
 public class SpringFactoriesLoaderTests {
 
@@ -43,20 +39,17 @@ public class SpringFactoriesLoaderTests {
 		assertTrue(factories.get(1) instanceof MyDummyFactory2);
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void loadInvalid() {
+		SpringFactoriesLoader.loadFactories(String.class, null);
+	}
+
 	@Test
 	public void loadPackagePrivateFactory() {
 		List<DummyPackagePrivateFactory> factories =
 				SpringFactoriesLoader.loadFactories(DummyPackagePrivateFactory.class, null);
 		assertEquals(1, factories.size());
-		assertFalse(Modifier.isPublic(factories.get(0).getClass().getModifiers()));
-	}
-
-	@Test
-	public void attemptToLoadFactoryOfIncompatibleType() {
-		assertThatIllegalArgumentException().isThrownBy(() ->
-				SpringFactoriesLoader.loadFactories(String.class, null))
-			.withMessageContaining("Unable to instantiate factory class "
-					+ "[org.springframework.core.io.support.MyDummyFactory1] for factory type [java.lang.String]");
+		assertTrue((factories.get(0).getClass().getModifiers() & Modifier.PUBLIC) == 0);
 	}
 
 }

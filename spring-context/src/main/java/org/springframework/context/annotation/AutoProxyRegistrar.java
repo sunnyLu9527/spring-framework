@@ -77,9 +77,9 @@ public class AutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 				}
 			}
 		}
-		if (!candidateFound && logger.isInfoEnabled()) {
+		if (!candidateFound && logger.isWarnEnabled()) {
 			String name = getClass().getSimpleName();
-			logger.info(String.format("%s was imported but no annotations were found " +
+			logger.warn(String.format("%s was imported but no annotations were found " +
 					"having both 'mode' and 'proxyTargetClass' attributes of type " +
 					"AdviceMode and boolean respectively. This means that auto proxy " +
 					"creator registration and configuration may not have occurred as " +

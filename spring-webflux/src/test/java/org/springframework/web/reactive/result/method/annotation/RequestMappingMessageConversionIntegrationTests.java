@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.MediaType.APPLICATION_XML;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static org.springframework.http.MediaType.*;
 
 /**
  * {@code @RequestMapping} integration tests focusing on serialization and
@@ -149,19 +147,6 @@ public class RequestMappingMessageConversionIntegrationTests extends AbstractReq
 		ResponseEntity<Person> responseEntity = performGet("/person-response/mono", JSON, Person.class);
 		assertEquals(17, responseEntity.getHeaders().getContentLength());
 		assertEquals(expected, responseEntity.getBody());
-	}
-
-	@Test // SPR-17506
-	public void personResponseBodyWithEmptyMono() throws Exception {
-		ResponseEntity<Person> responseEntity = performGet("/person-response/mono-empty", JSON, Person.class);
-		assertEquals(0, responseEntity.getHeaders().getContentLength());
-		assertNull(responseEntity.getBody());
-
-		// As we're on the same connection, the 2nd request proves server response handling
-		// did complete after the 1st request..
-		responseEntity = performGet("/person-response/mono-empty", JSON, Person.class);
-		assertEquals(0, responseEntity.getHeaders().getContentLength());
-		assertNull(responseEntity.getBody());
 	}
 
 	@Test
@@ -510,11 +495,6 @@ public class RequestMappingMessageConversionIntegrationTests extends AbstractReq
 			return Mono.just(new Person("Robert"));
 		}
 
-		@GetMapping("/mono-empty")
-		public Mono<Person> getMonoEmpty() {
-			return Mono.empty();
-		}
-
 		@GetMapping("/mono-declared-as-object")
 		public Object getMonoDeclaredAsObject() {
 			return Mono.just(new Person("Robert"));
@@ -658,7 +638,6 @@ public class RequestMappingMessageConversionIntegrationTests extends AbstractReq
 		}
 
 		@PostMapping("/rxjava2-single")
-		@SuppressWarnings("deprecation")
 		public io.reactivex.Completable createWithRxJava2Single(@RequestBody io.reactivex.Single<Person> single) {
 			return single.map(persons::add).toCompletable();
 		}
@@ -674,7 +653,6 @@ public class RequestMappingMessageConversionIntegrationTests extends AbstractReq
 		}
 
 		@PostMapping("/rxjava2-observable")
-		@SuppressWarnings("deprecation")
 		public io.reactivex.Completable createWithRxJava2Observable(
 				@RequestBody io.reactivex.Observable<Person> observable) {
 
@@ -682,7 +660,6 @@ public class RequestMappingMessageConversionIntegrationTests extends AbstractReq
 		}
 
 		@PostMapping("/flowable")
-		@SuppressWarnings("deprecation")
 		public io.reactivex.Completable createWithFlowable(@RequestBody Flowable<Person> flowable) {
 			return flowable.toList().doOnSuccess(persons::addAll).toCompletable();
 		}

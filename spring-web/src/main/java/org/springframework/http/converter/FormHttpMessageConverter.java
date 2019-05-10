@@ -66,11 +66,10 @@ import org.springframework.util.StringUtils;
  * RestTemplate template = new RestTemplate();
  * // AllEncompassingFormHttpMessageConverter is configured by default
  *
- * MultiValueMap&lt;String, Object&gt; form = new LinkedMultiValueMap&lt;&gt;();
+ * MultiValueMap&lt;String, String&gt; form = new LinkedMultiValueMap&lt;&gt;();
  * form.add("field 1", "value 1");
  * form.add("field 2", "value 2");
  * form.add("field 2", "value 3");
- * form.add("field 3", 4);  // non-String form values supported as of 5.1.4
  * template.postForLocation("https://example.com/myForm", form);
  * </pre>
  *
@@ -94,9 +93,6 @@ import org.springframework.util.StringUtils;
  */
 public class FormHttpMessageConverter implements HttpMessageConverter<MultiValueMap<String, ?>> {
 
-	/**
-	 * The default charset used by the converter.
-	 */
 	public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
 	private static final MediaType DEFAULT_FORM_DATA_MEDIA_TYPE =
@@ -117,8 +113,11 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 		this.supportedMediaTypes.add(MediaType.APPLICATION_FORM_URLENCODED);
 		this.supportedMediaTypes.add(MediaType.MULTIPART_FORM_DATA);
 
+		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
+		stringHttpMessageConverter.setWriteAcceptCharset(false);  // see SPR-7316
+
 		this.partConverters.add(new ByteArrayHttpMessageConverter());
-		this.partConverters.add(new StringHttpMessageConverter());
+		this.partConverters.add(stringHttpMessageConverter);
 		this.partConverters.add(new ResourceHttpMessageConverter());
 
 		applyDefaultCharset();
@@ -268,7 +267,7 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 			throws IOException, HttpMessageNotWritableException {
 
 		if (!isMultipart(map, contentType)) {
-			writeForm((MultiValueMap<String, Object>) map, contentType, outputMessage);
+			writeForm((MultiValueMap<String, String>) map, contentType, outputMessage);
 		}
 		else {
 			writeMultipart((MultiValueMap<String, Object>) map, outputMessage);
@@ -290,7 +289,7 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 		return false;
 	}
 
-	private void writeForm(MultiValueMap<String, Object> formData, @Nullable MediaType contentType,
+	private void writeForm(MultiValueMap<String, String> formData, @Nullable MediaType contentType,
 			HttpOutputMessage outputMessage) throws IOException {
 
 		contentType = getMediaType(contentType);
@@ -299,7 +298,25 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 		Charset charset = contentType.getCharset();
 		Assert.notNull(charset, "No charset"); // should never occur
 
-		final byte[] bytes = serializeForm(formData, charset).getBytes(charset);
+		StringBuilder builder = new StringBuilder();
+		formData.forEach((name, values) ->
+				values.forEach(value -> {
+					try {
+						if (builder.length() != 0) {
+							builder.append('&');
+						}
+						builder.append(URLEncoder.encode(name, charset.name()));
+						if (value != null) {
+							builder.append('=');
+							builder.append(URLEncoder.encode(value, charset.name()));
+						}
+					}
+					catch (UnsupportedEncodingException ex) {
+						throw new IllegalStateException(ex);
+					}
+				}));
+
+		final byte[] bytes = builder.toString().getBytes(charset);
 		outputMessage.getHeaders().setContentLength(bytes.length);
 
 		if (outputMessage instanceof StreamingHttpOutputMessage) {
@@ -321,28 +338,6 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 		else {
 			return mediaType;
 		}
-	}
-
-	protected String serializeForm(MultiValueMap<String, Object> formData, Charset charset) {
-		StringBuilder builder = new StringBuilder();
-		formData.forEach((name, values) ->
-				values.forEach(value -> {
-					try {
-						if (builder.length() != 0) {
-							builder.append('&');
-						}
-						builder.append(URLEncoder.encode(name, charset.name()));
-						if (value != null) {
-							builder.append('=');
-							builder.append(URLEncoder.encode(String.valueOf(value), charset.name()));
-						}
-					}
-					catch (UnsupportedEncodingException ex) {
-						throw new IllegalStateException(ex);
-					}
-				}));
-
-		return builder.toString();
 	}
 
 	private void writeMultipart(final MultiValueMap<String, Object> parts, HttpOutputMessage outputMessage)

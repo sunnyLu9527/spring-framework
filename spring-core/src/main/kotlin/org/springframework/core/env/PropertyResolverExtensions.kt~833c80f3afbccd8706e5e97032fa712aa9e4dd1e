@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.web.reactive.function.server
-
-import kotlinx.coroutines.reactive.awaitSingle
+package org.springframework.core.env
 
 /**
- * Coroutines variant of [RenderingResponse.Builder.build].
+ * Extension for [PropertyResolver.getRequiredProperty] providing Array like getter.
+ *
+ * ```kotlin
+ * env["name"] = "Seb"
+ * ```
  *
  * @author Sebastien Deleuze
- * @since 5.2
+ * @since 5.0
  */
-suspend fun RenderingResponse.Builder.buildAndAwait(): RenderingResponse = build().awaitSingle()
+operator fun PropertyResolver.get(key: String) : String = getRequiredProperty(key)

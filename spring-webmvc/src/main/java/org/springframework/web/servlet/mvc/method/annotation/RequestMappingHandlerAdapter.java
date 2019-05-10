@@ -36,9 +36,8 @@ import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ReactiveAdapterRegistry;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.core.log.LogFormatUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
@@ -99,7 +98,7 @@ import org.springframework.web.util.WebUtils;
 
 /**
  * Extension of {@link AbstractHandlerMethodAdapter} that supports
- * {@link RequestMapping @RequestMapping} annotated {@link HandlerMethod HandlerMethods}.
+ * {@link RequestMapping} annotated {@code HandlerMethod}s.
  *
  * <p>Support for custom argument and return value types can be added via
  * {@link #setCustomArgumentResolvers} and {@link #setCustomReturnValueHandlers},
@@ -108,6 +107,7 @@ import org.springframework.web.util.WebUtils;
  *
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 3.1
  * @see HandlerMethodArgumentResolver
  * @see HandlerMethodReturnValueHandler
@@ -119,14 +119,14 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	 * MethodFilter that matches {@link InitBinder @InitBinder} methods.
 	 */
 	public static final MethodFilter INIT_BINDER_METHODS = method ->
-			AnnotatedElementUtils.hasAnnotation(method, InitBinder.class);
+			(AnnotationUtils.findAnnotation(method, InitBinder.class) != null);
 
 	/**
 	 * MethodFilter that matches {@link ModelAttribute @ModelAttribute} methods.
 	 */
 	public static final MethodFilter MODEL_ATTRIBUTE_METHODS = method ->
-			(!AnnotatedElementUtils.hasAnnotation(method, RequestMapping.class) &&
-					AnnotatedElementUtils.hasAnnotation(method, ModelAttribute.class));
+			(AnnotationUtils.findAnnotation(method, RequestMapping.class) == null &&
+					AnnotationUtils.findAnnotation(method, ModelAttribute.class) != null);
 
 
 	@Nullable
@@ -193,15 +193,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 
 	public RequestMappingHandlerAdapter() {
+		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
+		stringHttpMessageConverter.setWriteAcceptCharset(false);  // see SPR-7316
+
 		this.messageConverters = new ArrayList<>(4);
 		this.messageConverters.add(new ByteArrayHttpMessageConverter());
-		this.messageConverters.add(new StringHttpMessageConverter());
-		try {
-			this.messageConverters.add(new SourceHttpMessageConverter<>());
-		}
-		catch (Error err) {
-			// Ignore when no TransformerFactory implementation is available
-		}
+		this.messageConverters.add(stringHttpMessageConverter);
+		this.messageConverters.add(new SourceHttpMessageConverter<>());
 		this.messageConverters.add(new AllEncompassingFormHttpMessageConverter());
 	}
 
@@ -309,7 +307,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	}
 
 	/**
-	 * Provide custom {@link ModelAndViewResolver ModelAndViewResolvers}.
+	 * Provide custom {@link ModelAndViewResolver}s.
 	 * <p><strong>Note:</strong> This method is available for backwards
 	 * compatibility only. However, it is recommended to re-write a
 	 * {@code ModelAndViewResolver} as {@link HandlerMethodReturnValueHandler}.
@@ -327,7 +325,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	}
 
 	/**
-	 * Return the configured {@link ModelAndViewResolver ModelAndViewResolvers}, or {@code null}.
+	 * Return the configured {@link ModelAndViewResolver}s, or {@code null}.
 	 */
 	@Nullable
 	public List<ModelAndViewResolver> getModelAndViewResolvers() {
@@ -435,6 +433,17 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	 */
 	public void setDeferredResultInterceptors(List<DeferredResultProcessingInterceptor> interceptors) {
 		this.deferredResultInterceptors = interceptors.toArray(new DeferredResultProcessingInterceptor[0]);
+	}
+
+	/**
+	 * Configure the registry for reactive library types to be supported as
+	 * return values from controller methods.
+	 * @since 5.0
+	 * @deprecated as of 5.0.5, in favor of {@link #setReactiveAdapterRegistry}
+	 */
+	@Deprecated
+	public void setReactiveRegistry(ReactiveAdapterRegistry reactiveRegistry) {
+		this.reactiveAdapterRegistry = reactiveRegistry;
 	}
 
 	/**
@@ -576,6 +585,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		if (getApplicationContext() == null) {
 			return;
 		}
+		if (logger.isInfoEnabled()) {
+			logger.info("Looking for @ControllerAdvice: " + getApplicationContext());
+		}
 
 		List<ControllerAdviceBean> adviceBeans = ControllerAdviceBean.findAnnotatedBeans(getApplicationContext());
 		AnnotationAwareOrderComparator.sort(adviceBeans);
@@ -590,42 +602,36 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			Set<Method> attrMethods = MethodIntrospector.selectMethods(beanType, MODEL_ATTRIBUTE_METHODS);
 			if (!attrMethods.isEmpty()) {
 				this.modelAttributeAdviceCache.put(adviceBean, attrMethods);
+				if (logger.isInfoEnabled()) {
+					logger.info("Detected @ModelAttribute methods in " + adviceBean);
+				}
 			}
 			Set<Method> binderMethods = MethodIntrospector.selectMethods(beanType, INIT_BINDER_METHODS);
 			if (!binderMethods.isEmpty()) {
 				this.initBinderAdviceCache.put(adviceBean, binderMethods);
+				if (logger.isInfoEnabled()) {
+					logger.info("Detected @InitBinder methods in " + adviceBean);
+				}
 			}
-			if (RequestBodyAdvice.class.isAssignableFrom(beanType) || ResponseBodyAdvice.class.isAssignableFrom(beanType)) {
+
+			boolean isRequestBodyAdvice = RequestBodyAdvice.class.isAssignableFrom(beanType);
+			boolean isResponseBodyAdvice = ResponseBodyAdvice.class.isAssignableFrom(beanType);
+			if (isRequestBodyAdvice || isResponseBodyAdvice) {
 				requestResponseBodyAdviceBeans.add(adviceBean);
+				if (logger.isInfoEnabled()) {
+					if (isRequestBodyAdvice) {
+						logger.info("Detected RequestBodyAdvice bean in " + adviceBean);
+					}
+					else {
+						logger.info("Detected ResponseBodyAdvice bean in " + adviceBean);
+					}
+				}
 			}
 		}
 
 		if (!requestResponseBodyAdviceBeans.isEmpty()) {
 			this.requestResponseBodyAdvice.addAll(0, requestResponseBodyAdviceBeans);
 		}
-
-		if (logger.isDebugEnabled()) {
-			int modelSize = this.modelAttributeAdviceCache.size();
-			int binderSize = this.initBinderAdviceCache.size();
-			int reqCount = getBodyAdviceCount(RequestBodyAdvice.class);
-			int resCount = getBodyAdviceCount(ResponseBodyAdvice.class);
-			if (modelSize == 0 && binderSize == 0 && reqCount == 0 && resCount == 0) {
-				logger.debug("ControllerAdvice beans: none");
-			}
-			else {
-				logger.debug("ControllerAdvice beans: " + modelSize + " @ModelAttribute, " + binderSize +
-						" @InitBinder, " + reqCount + " RequestBodyAdvice, " + resCount + " ResponseBodyAdvice");
-			}
-		}
-	}
-
-	// Count all advice, including explicit registrations..
-
-	private int getBodyAdviceCount(Class<?> adviceType) {
-		List<Object> advice = this.requestResponseBodyAdvice;
-		return RequestBodyAdvice.class.isAssignableFrom(adviceType) ?
-				RequestResponseBodyAdviceChain.getAdviceByType(advice, RequestBodyAdvice.class).size() :
-				RequestResponseBodyAdviceChain.getAdviceByType(advice, ResponseBodyAdvice.class).size();
 	}
 
 	/**
@@ -828,7 +834,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			synchronized (this.sessionAttributesHandlerCache) {
 				sessionAttrHandler = this.sessionAttributesHandlerCache.get(handlerType);
 				if (sessionAttrHandler == null) {
-					sessionAttrHandler = new SessionAttributesHandler(handlerType, this.sessionAttributeStore);
+					sessionAttrHandler = new SessionAttributesHandler(handlerType, sessionAttributeStore);
 					this.sessionAttributesHandlerCache.put(handlerType, sessionAttrHandler);
 				}
 			}
@@ -879,10 +885,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				Object result = asyncManager.getConcurrentResult();
 				mavContainer = (ModelAndViewContainer) asyncManager.getConcurrentResultContext()[0];
 				asyncManager.clearConcurrentResult();
-				LogFormatUtils.traceDebug(logger, traceOn -> {
-					String formatted = LogFormatUtils.formatValue(result, !traceOn);
-					return "Resume with async result [" + formatted + "]";
-				});
+				if (logger.isDebugEnabled()) {
+					logger.debug("Found concurrent result value [" + result + "]");
+				}
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
 

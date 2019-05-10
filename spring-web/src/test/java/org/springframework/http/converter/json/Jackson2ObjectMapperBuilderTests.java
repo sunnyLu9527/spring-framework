@@ -35,10 +35,8 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.StreamSupport;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -72,7 +70,6 @@ import com.fasterxml.jackson.databind.ser.std.NumberSerializer;
 import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.fasterxml.jackson.dataformat.xml.XmlFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import kotlin.ranges.IntRange;
@@ -83,21 +80,13 @@ import org.junit.Test;
 import org.springframework.beans.FatalBeanException;
 import org.springframework.util.StringUtils;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Test class for {@link Jackson2ObjectMapperBuilder}.
  *
  * @author Sebastien Deleuze
- * @author Eddú Meléndez
  */
 @SuppressWarnings("deprecation")
 public class Jackson2ObjectMapperBuilderTests {
@@ -500,14 +489,6 @@ public class Jackson2ObjectMapperBuilderTests {
 		assertEquals(XmlMapper.class, objectMapper.getClass());
 	}
 
-	@Test  // gh-22428
-	public void xmlMapperAndCustomFactory() {
-		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.xml().factory(new MyXmlFactory()).build();
-		assertNotNull(objectMapper);
-		assertEquals(XmlMapper.class, objectMapper.getClass());
-		assertEquals(MyXmlFactory.class, objectMapper.getFactory().getClass());
-	}
-
 	@Test
 	public void createXmlMapper() {
 		Jackson2ObjectMapperBuilder builder = Jackson2ObjectMapperBuilder.json().indentOutput(true);
@@ -549,19 +530,6 @@ public class Jackson2ObjectMapperBuilderTests {
 		assertEquals(SmileFactory.class, objectMapper.getFactory().getClass());
 	}
 
-
-	@Test
-	public void visibility() throws JsonProcessingException {
-		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()
-				.visibility(PropertyAccessor.GETTER, Visibility.NONE)
-				.visibility(PropertyAccessor.FIELD, Visibility.ANY)
-				.build();
-
-		String json = objectMapper.writeValueAsString(new JacksonVisibilityBean());
-		assertThat(json, containsString("property1"));
-		assertThat(json, containsString("property2"));
-		assertThat(json, not(containsString("property3")));
-	}
 
 	public static class CustomIntegerModule extends Module {
 
@@ -674,8 +642,7 @@ public class Jackson2ObjectMapperBuilderTests {
 			try {
 				return OffsetDateTime.parse(value);
 
-			}
-			catch (DateTimeParseException exception) {
+			} catch (DateTimeParseException exception) {
 				return OffsetDateTime.parse(value + CURRENT_ZONE_OFFSET);
 			}
 		}
@@ -694,10 +661,6 @@ public class Jackson2ObjectMapperBuilderTests {
 			this.offsetDateTime = offsetDateTime;
 		}
 
-	}
-
-	@SuppressWarnings("serial")
-	public static class MyXmlFactory extends XmlFactory {
 	}
 
 	static class Foo {}

@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.http;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link ResponseCookie}.
@@ -39,9 +39,9 @@ public class ResponseCookieTests {
 
 	@Test
 	public void httpOnlyStrictSecureWithDomainAndPath() {
-		assertEquals("id=1fWa; Path=/projects; Domain=spring.io; Secure; HttpOnly; SameSite=strict",
+		assertEquals("id=1fWa; Path=/projects; Domain=spring.io; Secure; HttpOnly",
 				ResponseCookie.from("id", "1fWa").domain("spring.io").path("/projects")
-						.httpOnly(true).secure(true).sameSite("strict").build().toString());
+						.httpOnly(true).secure(true).build().toString());
 	}
 
 	@Test

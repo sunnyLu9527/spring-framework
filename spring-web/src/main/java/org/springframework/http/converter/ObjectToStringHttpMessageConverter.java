@@ -81,7 +81,8 @@ public class ObjectToStringHttpMessageConverter extends AbstractHttpMessageConve
 
 
 	/**
-	 * Delegates to {@link StringHttpMessageConverter#setWriteAcceptCharset(boolean)}.
+	 * Indicates whether the {@code Accept-Charset} should be written to any outgoing request.
+	 * <p>Default is {@code true}.
 	 */
 	public void setWriteAcceptCharset(boolean writeAcceptCharset) {
 		this.stringHttpMessageConverter.setWriteAcceptCharset(writeAcceptCharset);
@@ -112,8 +113,7 @@ public class ObjectToStringHttpMessageConverter extends AbstractHttpMessageConve
 		Object result = this.conversionService.convert(value, clazz);
 		if (result == null) {
 			throw new HttpMessageNotReadableException(
-					"Unexpected null conversion result for '" + value + "' to " + clazz,
-					inputMessage);
+					"Unexpected null conversion result for '" + value + "' to " + clazz);
 		}
 		return result;
 	}

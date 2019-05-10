@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.web.reactive.function.client;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,10 +36,8 @@ import org.springframework.mock.http.client.reactive.test.MockClientHttpRequest;
 import org.springframework.web.reactive.function.BodyInserter;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.OPTIONS;
@@ -52,7 +49,7 @@ import static org.springframework.http.HttpMethod.POST;
 public class DefaultClientRequestBuilderTests {
 
 	@Test
-	public void from() throws URISyntaxException {
+	public void from() throws Exception {
 		ClientRequest other = ClientRequest.create(GET, URI.create("https://example.com"))
 				.header("foo", "bar")
 				.cookie("baz", "qux").build();
@@ -69,7 +66,7 @@ public class DefaultClientRequestBuilderTests {
 	}
 
 	@Test
-	public void method() throws URISyntaxException {
+	public void method() throws Exception {
 		URI url = new URI("https://example.com");
 		ClientRequest.Builder builder = ClientRequest.create(DELETE, url);
 		assertEquals(DELETE, builder.build().method());
@@ -79,7 +76,7 @@ public class DefaultClientRequestBuilderTests {
 	}
 
 	@Test
-	public void url() throws URISyntaxException {
+	public void url() throws Exception {
 		URI url1 = new URI("https://example.com/foo");
 		URI url2 = new URI("https://example.com/bar");
 		ClientRequest.Builder builder = ClientRequest.create(DELETE, url1);
@@ -131,7 +128,7 @@ public class DefaultClientRequestBuilderTests {
 		messageWriters.add(new EncoderHttpMessageWriter<>(CharSequenceEncoder.allMimeTypes()));
 
 		ExchangeStrategies strategies = mock(ExchangeStrategies.class);
-		given(strategies.messageWriters()).willReturn(messageWriters);
+		when(strategies.messageWriters()).thenReturn(messageWriters);
 
 		MockClientHttpRequest request = new MockClientHttpRequest(GET, "/");
 		result.writeTo(request, strategies).block();
@@ -153,7 +150,7 @@ public class DefaultClientRequestBuilderTests {
 		messageWriters.add(new EncoderHttpMessageWriter<>(CharSequenceEncoder.allMimeTypes()));
 
 		ExchangeStrategies strategies = mock(ExchangeStrategies.class);
-		given(strategies.messageWriters()).willReturn(messageWriters);
+		when(strategies.messageWriters()).thenReturn(messageWriters);
 
 		MockClientHttpRequest request = new MockClientHttpRequest(GET, "/");
 		result.writeTo(request, strategies).block();
@@ -176,7 +173,7 @@ public class DefaultClientRequestBuilderTests {
 		messageWriters.add(new EncoderHttpMessageWriter<>(CharSequenceEncoder.allMimeTypes()));
 
 		ExchangeStrategies strategies = mock(ExchangeStrategies.class);
-		given(strategies.messageWriters()).willReturn(messageWriters);
+		when(strategies.messageWriters()).thenReturn(messageWriters);
 
 		MockClientHttpRequest request = new MockClientHttpRequest(GET, "/");
 		result.writeTo(request, strategies).block();

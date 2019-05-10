@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.CodecException;
 import org.springframework.core.codec.DecodingException;
-import org.springframework.core.codec.Hints;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.log.LogFormatUtils;
 import org.springframework.http.codec.HttpMessageDecoder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -79,7 +76,7 @@ public abstract class AbstractJackson2Decoder extends Jackson2CodecSupport imple
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
 		JavaType javaType = getObjectMapper().getTypeFactory().constructType(elementType.getType());
 		// Skip String: CharSequenceDecoder + "*/*" comes after
-		return (!CharSequence.class.isAssignableFrom(elementType.toClass()) &&
+		return (!CharSequence.class.isAssignableFrom(elementType.resolve(Object.class)) &&
 				getObjectMapper().canDeserialize(javaType) && supportsMimeType(mimeType));
 	}
 
@@ -87,81 +84,47 @@ public abstract class AbstractJackson2Decoder extends Jackson2CodecSupport imple
 	public Flux<Object> decode(Publisher<DataBuffer> input, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		Flux<TokenBuffer> tokens = Jackson2Tokenizer.tokenize(
-				Flux.from(input), this.jsonFactory, getObjectMapper(), true);
-
-		ObjectReader reader = getObjectReader(elementType, hints);
-
-		return tokens.handle((tokenBuffer, sink) -> {
-			try {
-				Object value = reader.readValue(tokenBuffer.asParser(getObjectMapper()));
-				logValue(value, hints);
-				if (value != null) {
-					sink.next(value);
-				}
-			}
-			catch (IOException ex) {
-				sink.error(processException(ex));
-			}
-		});
+		Flux<TokenBuffer> tokens = Jackson2Tokenizer.tokenize(Flux.from(input), this.jsonFactory, true);
+		return decodeInternal(tokens, elementType, mimeType, hints);
 	}
 
 	@Override
 	public Mono<Object> decodeToMono(Publisher<DataBuffer> input, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		return DataBufferUtils.join(input)
-				.map(dataBuffer -> decode(dataBuffer, elementType, mimeType, hints));
+		Flux<TokenBuffer> tokens = Jackson2Tokenizer.tokenize(Flux.from(input), this.jsonFactory, false);
+		return decodeInternal(tokens, elementType, mimeType, hints).singleOrEmpty();
 	}
 
-	@Override
-	public Object decode(DataBuffer dataBuffer, ResolvableType targetType,
-			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) throws DecodingException {
+	private Flux<Object> decodeInternal(Flux<TokenBuffer> tokens, ResolvableType elementType,
+			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		try {
-			ObjectReader objectReader = getObjectReader(targetType, hints);
-			Object value = objectReader.readValue(dataBuffer.asInputStream());
-			logValue(value, hints);
-			return value;
-		}
-		catch (IOException ex) {
-			throw processException(ex);
-		}
-		finally {
-			DataBufferUtils.release(dataBuffer);
-		}
-	}
-
-	private ObjectReader getObjectReader(ResolvableType elementType, @Nullable Map<String, Object> hints) {
+		Assert.notNull(tokens, "'tokens' must not be null");
 		Assert.notNull(elementType, "'elementType' must not be null");
+
 		MethodParameter param = getParameter(elementType);
 		Class<?> contextClass = (param != null ? param.getContainingClass() : null);
 		JavaType javaType = getJavaType(elementType.getType(), contextClass);
 		Class<?> jsonView = (hints != null ? (Class<?>) hints.get(Jackson2CodecSupport.JSON_VIEW_HINT) : null);
-		return jsonView != null ?
+
+		ObjectReader reader = (jsonView != null ?
 				getObjectMapper().readerWithView(jsonView).forType(javaType) :
-				getObjectMapper().readerFor(javaType);
-	}
+				getObjectMapper().readerFor(javaType));
 
-	private void logValue(@Nullable Object value, @Nullable Map<String, Object> hints) {
-		if (!Hints.isLoggingSuppressed(hints)) {
-			LogFormatUtils.traceDebug(logger, traceOn -> {
-				String formatted = LogFormatUtils.formatValue(value, !traceOn);
-				return Hints.getLogPrefix(hints) + "Decoded [" + formatted + "]";
-			});
-		}
-	}
-
-	private CodecException processException(IOException ex) {
-		if (ex instanceof InvalidDefinitionException) {
-			JavaType type = ((InvalidDefinitionException) ex).getType();
-			return new CodecException("Type definition error: " + type, ex);
-		}
-		if (ex instanceof JsonProcessingException) {
-			String originalMessage = ((JsonProcessingException) ex).getOriginalMessage();
-			return new DecodingException("JSON decoding error: " + originalMessage, ex);
-		}
-		return new DecodingException("I/O error while parsing input stream", ex);
+		return tokens.map(tokenBuffer -> {
+			try {
+				return reader.readValue(tokenBuffer.asParser(getObjectMapper()));
+			}
+			catch (InvalidDefinitionException ex) {
+				throw new CodecException("Type definition error: " + ex.getType(), ex);
+			}
+			catch (JsonProcessingException ex) {
+				throw new DecodingException("JSON decoding error: " + ex.getOriginalMessage(), ex);
+			}
+			catch (IOException ex) {
+				throw new DecodingException("I/O error while parsing input stream", ex);
+			}
+		});
 	}
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package org.springframework.core.io.buffer;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.function.IntPredicate;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.ByteBufUtil;
 
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -36,7 +34,6 @@ import org.springframework.util.ObjectUtils;
  * {@link ByteBuf}. Typically constructed with {@link NettyDataBufferFactory}.
  *
  * @author Arjen Poutsma
- * @author Brian Clozel
  * @since 5.0
  */
 public class NettyDataBuffer implements PooledDataBuffer {
@@ -143,12 +140,6 @@ public class NettyDataBuffer implements PooledDataBuffer {
 	}
 
 	@Override
-	public DataBuffer ensureCapacity(int capacity) {
-		this.byteBuf.ensureWritable(capacity);
-		return this;
-	}
-
-	@Override
 	public byte read() {
 		return this.byteBuf.readByte();
 	}
@@ -187,18 +178,15 @@ public class NettyDataBuffer implements PooledDataBuffer {
 	public NettyDataBuffer write(DataBuffer... buffers) {
 		if (!ObjectUtils.isEmpty(buffers)) {
 			if (hasNettyDataBuffers(buffers)) {
-				ByteBuf[] nativeBuffers = new ByteBuf[buffers.length];
-				for (int i = 0; i < buffers.length; i++) {
-					nativeBuffers[i] = ((NettyDataBuffer) buffers[i]).getNativeBuffer();
-				}
+				ByteBuf[] nativeBuffers = Arrays.stream(buffers)
+						.map(b -> ((NettyDataBuffer) b).getNativeBuffer())
+						.toArray(ByteBuf[]::new);
 				write(nativeBuffers);
 			}
 			else {
-				ByteBuffer[] byteBuffers = new ByteBuffer[buffers.length];
-				for (int i = 0; i < buffers.length; i++) {
-					byteBuffers[i] = buffers[i].asByteBuffer();
-
-				}
+				ByteBuffer[] byteBuffers =
+						Arrays.stream(buffers).map(DataBuffer::asByteBuffer)
+								.toArray(ByteBuffer[]::new);
 				write(byteBuffers);
 			}
 		}
@@ -225,7 +213,7 @@ public class NettyDataBuffer implements PooledDataBuffer {
 	}
 
 	/**
-	 * Writes one or more Netty {@link ByteBuf ByteBufs} to this buffer,
+	 * Writes one or more Netty {@link ByteBuf}s to this buffer,
 	 * starting at the current writing position.
 	 * @param byteBufs the buffers to write into this buffer
 	 * @return this buffer
@@ -240,30 +228,8 @@ public class NettyDataBuffer implements PooledDataBuffer {
 	}
 
 	@Override
-	public DataBuffer write(CharSequence charSequence, Charset charset) {
-		Assert.notNull(charSequence, "CharSequence must not be null");
-		Assert.notNull(charset, "Charset must not be null");
-		if (StandardCharsets.UTF_8.equals(charset)) {
-			ByteBufUtil.writeUtf8(this.byteBuf, charSequence);
-		}
-		else if (StandardCharsets.US_ASCII.equals(charset)) {
-			ByteBufUtil.writeAscii(this.byteBuf, charSequence);
-		}
-		else {
-			return PooledDataBuffer.super.write(charSequence, charset);
-		}
-		return this;
-	}
-
-	@Override
 	public NettyDataBuffer slice(int index, int length) {
 		ByteBuf slice = this.byteBuf.slice(index, length);
-		return new NettyDataBuffer(slice, this.dataBufferFactory);
-	}
-
-	@Override
-	public NettyDataBuffer retainedSlice(int index, int length) {
-		ByteBuf slice = this.byteBuf.retainedSlice(index, length);
 		return new NettyDataBuffer(slice, this.dataBufferFactory);
 	}
 
@@ -290,11 +256,6 @@ public class NettyDataBuffer implements PooledDataBuffer {
 	@Override
 	public OutputStream asOutputStream() {
 		return new ByteBufOutputStream(this.byteBuf);
-	}
-
-	@Override
-	public boolean isAllocated() {
-		return this.byteBuf.refCnt() > 0;
 	}
 
 	@Override

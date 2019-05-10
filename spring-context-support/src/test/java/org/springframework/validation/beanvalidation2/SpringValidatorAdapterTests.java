@@ -54,16 +54,10 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 
-import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.*;
+import static org.hamcrest.core.Is.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Kazuki Shimizu
@@ -179,24 +173,6 @@ public class SpringValidatorAdapterTests {
 		assertThat(error2.unwrap(ConstraintViolation.class).getPropertyPath().toString(), is("confirmEmail"));
 	}
 
-	@Test
-	public void testPatternMessage() {
-		TestBean testBean = new TestBean();
-		testBean.setEmail("X");
-		testBean.setConfirmEmail("X");
-
-		BeanPropertyBindingResult errors = new BeanPropertyBindingResult(testBean, "testBean");
-		validatorAdapter.validate(testBean, errors);
-
-		assertThat(errors.getFieldErrorCount("email"), is(1));
-		assertThat(errors.getFieldValue("email"), is("X"));
-		FieldError error = errors.getFieldError("email");
-		assertNotNull(error);
-		assertThat(messageSource.getMessage(error, Locale.ENGLISH), containsString("[\\w.'-]{1,}@[\\w.'-]{1,}"));
-		assertTrue(error.contains(ConstraintViolation.class));
-		assertThat(error.unwrap(ConstraintViolation.class).getPropertyPath().toString(), is("email"));
-	}
-
 	@Test  // SPR-16177
 	public void testWithList() {
 		Parent parent = new Parent();
@@ -287,7 +263,6 @@ public class SpringValidatorAdapterTests {
 
 		private String confirmPassword;
 
-		@Pattern(regexp = "[\\w.'-]{1,}@[\\w.'-]{1,}")
 		private String email;
 
 		@Pattern(regexp = "[\\p{L} -]*", message = "Email required")
@@ -523,8 +498,7 @@ public class SpringValidatorAdapterTests {
 								.addPropertyNode(f.getName())
 								.addConstraintViolation();
 					}
-				}
-				catch (IllegalAccessException ex) {
+				} catch (IllegalAccessException ex) {
 					throw new IllegalStateException(ex);
 				}
 

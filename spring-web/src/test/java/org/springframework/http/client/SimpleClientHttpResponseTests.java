@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,10 @@ import org.junit.Test;
 import org.springframework.util.StreamUtils;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.*;
 
 /**
  * @author Brian Clozel
@@ -100,7 +96,7 @@ public class SimpleClientHttpResponseTests {
 	public void shouldNotDrainWhenErrorStreamClosed() throws Exception {
 		InputStream is = mock(InputStream.class);
 		given(this.connection.getErrorStream()).willReturn(is);
-		willDoNothing().given(is).close();
+		doNothing().when(is).close();
 		given(is.read(any())).willThrow(new NullPointerException("from HttpURLConnection#ErrorStream"));
 
 		InputStream responseStream = this.response.getBody();
@@ -108,18 +104,6 @@ public class SimpleClientHttpResponseTests {
 		this.response.close();
 
 		verify(is).close();
-	}
-
-	@Test // SPR-17181
-	public void shouldDrainResponseEvenIfResponseNotRead() throws Exception {
-		TestByteArrayInputStream is = new TestByteArrayInputStream("SpringSpring".getBytes(StandardCharsets.UTF_8));
-		given(this.connection.getErrorStream()).willReturn(null);
-		given(this.connection.getInputStream()).willReturn(is);
-
-		this.response.close();
-		assertThat(is.available(), is(0));
-		assertTrue(is.isClosed());
-		verify(this.connection, never()).disconnect();
 	}
 
 

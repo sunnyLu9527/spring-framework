@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,11 @@ import org.springframework.aop.scope.ScopedProxyUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.scheduling.Trigger;
@@ -58,9 +58,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Mark Fisher
@@ -437,7 +435,7 @@ public class ScheduledAnnotationBeanPostProcessorTests {
 	public void propertyPlaceholderWithCron() {
 		String businessHoursCronExpression = "0 0 9-17 * * MON-FRI";
 		BeanDefinition processorDefinition = new RootBeanDefinition(ScheduledAnnotationBeanPostProcessor.class);
-		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertySourcesPlaceholderConfigurer.class);
+		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertyPlaceholderConfigurer.class);
 		Properties properties = new Properties();
 		properties.setProperty("schedules.businessHours", businessHoursCronExpression);
 		placeholderDefinition.getPropertyValues().addPropertyValue("properties", properties);
@@ -467,24 +465,6 @@ public class ScheduledAnnotationBeanPostProcessorTests {
 	}
 
 	@Test
-	public void propertyPlaceholderWithInactiveCron() {
-		String businessHoursCronExpression = "-";
-		BeanDefinition processorDefinition = new RootBeanDefinition(ScheduledAnnotationBeanPostProcessor.class);
-		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertySourcesPlaceholderConfigurer.class);
-		Properties properties = new Properties();
-		properties.setProperty("schedules.businessHours", businessHoursCronExpression);
-		placeholderDefinition.getPropertyValues().addPropertyValue("properties", properties);
-		BeanDefinition targetDefinition = new RootBeanDefinition(PropertyPlaceholderWithCronTestBean.class);
-		context.registerBeanDefinition("postProcessor", processorDefinition);
-		context.registerBeanDefinition("placeholder", placeholderDefinition);
-		context.registerBeanDefinition("target", targetDefinition);
-		context.refresh();
-
-		ScheduledTaskHolder postProcessor = context.getBean("postProcessor", ScheduledTaskHolder.class);
-		assertTrue(postProcessor.getScheduledTasks().isEmpty());
-	}
-
-	@Test
 	public void propertyPlaceholderWithFixedDelayInMillis() {
 		propertyPlaceholderWithFixedDelay(false);
 	}
@@ -496,7 +476,7 @@ public class ScheduledAnnotationBeanPostProcessorTests {
 
 	private void propertyPlaceholderWithFixedDelay(boolean durationFormat) {
 		BeanDefinition processorDefinition = new RootBeanDefinition(ScheduledAnnotationBeanPostProcessor.class);
-		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertySourcesPlaceholderConfigurer.class);
+		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertyPlaceholderConfigurer.class);
 		Properties properties = new Properties();
 		properties.setProperty("fixedDelay", (durationFormat ? "PT5S" : "5000"));
 		properties.setProperty("initialDelay", (durationFormat ? "PT1S" : "1000"));
@@ -539,7 +519,7 @@ public class ScheduledAnnotationBeanPostProcessorTests {
 
 	private void propertyPlaceholderWithFixedRate(boolean durationFormat) {
 		BeanDefinition processorDefinition = new RootBeanDefinition(ScheduledAnnotationBeanPostProcessor.class);
-		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertySourcesPlaceholderConfigurer.class);
+		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertyPlaceholderConfigurer.class);
 		Properties properties = new Properties();
 		properties.setProperty("fixedRate", (durationFormat ? "PT3S" : "3000"));
 		properties.setProperty("initialDelay", (durationFormat ? "PT1S" : "1000"));
@@ -605,7 +585,7 @@ public class ScheduledAnnotationBeanPostProcessorTests {
 	public void propertyPlaceholderForMetaAnnotation() {
 		String businessHoursCronExpression = "0 0 9-17 * * MON-FRI";
 		BeanDefinition processorDefinition = new RootBeanDefinition(ScheduledAnnotationBeanPostProcessor.class);
-		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertySourcesPlaceholderConfigurer.class);
+		BeanDefinition placeholderDefinition = new RootBeanDefinition(PropertyPlaceholderConfigurer.class);
 		Properties properties = new Properties();
 		properties.setProperty("schedules.businessHours", businessHoursCronExpression);
 		placeholderDefinition.getPropertyValues().addPropertyValue("properties", properties);

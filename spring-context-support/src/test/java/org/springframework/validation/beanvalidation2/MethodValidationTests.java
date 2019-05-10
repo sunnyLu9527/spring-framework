@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
 import org.springframework.validation.beanvalidation.MethodValidationInterceptor;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Juergen Hoeller
@@ -51,17 +49,15 @@ import static org.junit.Assert.fail;
 public class MethodValidationTests {
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testMethodValidationInterceptor() {
 		MyValidBean bean = new MyValidBean();
 		ProxyFactory proxyFactory = new ProxyFactory(bean);
 		proxyFactory.addAdvice(new MethodValidationInterceptor());
 		proxyFactory.addAdvisor(new AsyncAnnotationAdvisor());
-		doTestProxyValidation((MyValidInterface<String>) proxyFactory.getProxy());
+		doTestProxyValidation((MyValidInterface) proxyFactory.getProxy());
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testMethodValidationPostProcessor() {
 		StaticApplicationContext ac = new StaticApplicationContext();
 		ac.registerSingleton("mvpp", MethodValidationPostProcessor.class);
@@ -74,7 +70,7 @@ public class MethodValidationTests {
 		ac.close();
 	}
 
-	private void doTestProxyValidation(MyValidInterface<String> proxy) {
+	private void doTestProxyValidation(MyValidInterface proxy) {
 		assertNotNull(proxy.myValidMethod("value", 5));
 		try {
 			assertNotNull(proxy.myValidMethod("value", 15));
@@ -126,7 +122,6 @@ public class MethodValidationTests {
 
 	@Test
 	public void testLazyValidatorForMethodValidation() {
-		@SuppressWarnings("resource")
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(
 				LazyMethodValidationConfig.class, CustomValidatorBean.class,
 				MyValidBean.class, MyValidFactoryBean.class);
@@ -135,7 +130,6 @@ public class MethodValidationTests {
 
 	@Test
 	public void testLazyValidatorForMethodValidationWithProxyTargetClass() {
-		@SuppressWarnings("resource")
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(
 				LazyMethodValidationConfigWithProxyTargetClass.class, CustomValidatorBean.class,
 				MyValidBean.class, MyValidFactoryBean.class);

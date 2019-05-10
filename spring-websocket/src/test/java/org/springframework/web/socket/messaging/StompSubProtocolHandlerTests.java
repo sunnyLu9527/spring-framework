@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,21 +59,10 @@ import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.handler.TestWebSocketSession;
 import org.springframework.web.socket.sockjs.transport.SockJsSession;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Test fixture for {@link StompSubProtocolHandler} tests.
@@ -99,7 +88,7 @@ public class StompSubProtocolHandlerTests {
 		this.channel = Mockito.mock(MessageChannel.class);
 		this.messageCaptor = ArgumentCaptor.forClass(Message.class);
 
-		given(this.channel.send(any())).willReturn(true);
+		when(this.channel.send(any())).thenReturn(true);
 
 		this.session = new TestWebSocketSession();
 		this.session.setId("s1");
@@ -137,7 +126,7 @@ public class StompSubProtocolHandlerTests {
 
 		StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
 		accessor.setHeartbeat(10000, 10000);
-		accessor.setAcceptVersion("1.0,1.1,1.2");
+		accessor.setAcceptVersion("1.0,1.1");
 		Message<?> connectMessage = MessageBuilder.createMessage(EMPTY_PAYLOAD, accessor.getMessageHeaders());
 
 		SimpMessageHeaderAccessor ackAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.CONNECT_ACK);
@@ -148,7 +137,7 @@ public class StompSubProtocolHandlerTests {
 
 		assertEquals(1, this.session.getSentMessages().size());
 		TextMessage actual = (TextMessage) this.session.getSentMessages().get(0);
-		assertEquals("CONNECTED\n" + "version:1.2\n" + "heart-beat:15000,15000\n" +
+		assertEquals("CONNECTED\n" + "version:1.1\n" + "heart-beat:15000,15000\n" +
 				"user-name:joe\n" + "\n" + "\u0000", actual.getPayload());
 	}
 
@@ -157,7 +146,7 @@ public class StompSubProtocolHandlerTests {
 
 		StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
 		accessor.setHeartbeat(10000, 10000);
-		accessor.setAcceptVersion("1.0");
+		accessor.setAcceptVersion("1.0,1.1");
 		Message<?> connectMessage = MessageBuilder.createMessage(EMPTY_PAYLOAD, accessor.getMessageHeaders());
 
 		SimpMessageHeaderAccessor ackAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.CONNECT_ACK);
@@ -167,7 +156,7 @@ public class StompSubProtocolHandlerTests {
 
 		assertEquals(1, this.session.getSentMessages().size());
 		TextMessage actual = (TextMessage) this.session.getSentMessages().get(0);
-		assertEquals("CONNECTED\n" + "version:1.0\n" + "heart-beat:0,0\n" +
+		assertEquals("CONNECTED\n" + "version:1.1\n" + "heart-beat:0,0\n" +
 				"user-name:joe\n" + "\n" + "\u0000", actual.getPayload());
 	}
 
@@ -223,7 +212,7 @@ public class StompSubProtocolHandlerTests {
 	public void handleMessageToClientWithHeartbeatSuppressingSockJsHeartbeat() throws IOException {
 
 		SockJsSession sockJsSession = Mockito.mock(SockJsSession.class);
-		given(sockJsSession.getId()).willReturn("s1");
+		when(sockJsSession.getId()).thenReturn("s1");
 		StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECTED);
 		accessor.setHeartbeat(0, 10);
 		Message<byte[]> message = MessageBuilder.createMessage(EMPTY_PAYLOAD, accessor.getMessageHeaders());
@@ -236,7 +225,7 @@ public class StompSubProtocolHandlerTests {
 		verifyNoMoreInteractions(sockJsSession);
 
 		sockJsSession = Mockito.mock(SockJsSession.class);
-		given(sockJsSession.getId()).willReturn("s1");
+		when(sockJsSession.getId()).thenReturn("s1");
 		accessor = StompHeaderAccessor.create(StompCommand.CONNECTED);
 		accessor.setHeartbeat(0, 0);
 		message = MessageBuilder.createMessage(EMPTY_PAYLOAD, accessor.getMessageHeaders());
@@ -300,7 +289,7 @@ public class StompSubProtocolHandlerTests {
 	@Test
 	public void handleMessageFromClient() {
 
-		TextMessage textMessage = StompTextMessageBuilder.create(StompCommand.STOMP).headers(
+		TextMessage textMessage = StompTextMessageBuilder.create(StompCommand.CONNECT).headers(
 				"login:guest", "passcode:guest", "accept-version:1.1,1.0", "heart-beat:10000,10000").build();
 
 		this.protocolHandler.afterSessionStarted(this.session, this.channel);
@@ -318,7 +307,7 @@ public class StompSubProtocolHandlerTests {
 		assertArrayEquals(new long[] {10000, 10000}, SimpMessageHeaderAccessor.getHeartbeat(actual.getHeaders()));
 
 		StompHeaderAccessor stompAccessor = StompHeaderAccessor.wrap(actual);
-		assertEquals(StompCommand.STOMP, stompAccessor.getCommand());
+		assertEquals(StompCommand.CONNECT, stompAccessor.getCommand());
 		assertEquals("guest", stompAccessor.getLogin());
 		assertEquals("guest", stompAccessor.getPasscode());
 		assertArrayEquals(new long[] {10000, 10000}, stompAccessor.getHeartbeat());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,14 @@ package org.springframework.http.client.reactive;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Flux;
-import reactor.netty.NettyInbound;
-import reactor.netty.http.client.HttpClientResponse;
+import reactor.ipc.netty.http.client.HttpClientResponse;
 
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.NettyDataBufferFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -38,44 +36,35 @@ import org.springframework.util.MultiValueMap;
  *
  * @author Brian Clozel
  * @since 5.0
- * @see reactor.netty.http.client.HttpClient
+ * @see reactor.ipc.netty.http.client.HttpClient
  */
 class ReactorClientHttpResponse implements ClientHttpResponse {
 
-	private final NettyDataBufferFactory bufferFactory;
-
 	private final HttpClientResponse response;
 
-	private final NettyInbound inbound;
-
-	private final AtomicBoolean rejectSubscribers = new AtomicBoolean();
+	private final AtomicBoolean bodyConsumed = new AtomicBoolean();
 
 
-	public ReactorClientHttpResponse(HttpClientResponse response, NettyInbound inbound, ByteBufAllocator alloc) {
+	public ReactorClientHttpResponse(HttpClientResponse response) {
 		this.response = response;
-		this.inbound = inbound;
-		this.bufferFactory = new NettyDataBufferFactory(alloc);
 	}
 
 
 	@Override
 	public Flux<DataBuffer> getBody() {
-		return this.inbound.receive()
-				.doOnSubscribe(s -> {
-					if (this.rejectSubscribers.get()) {
-						throw new IllegalStateException("The client response body can only be consumed once.");
-					}
-				})
-				.doOnCancel(() ->
-					// https://github.com/reactor/reactor-netty/issues/503
-					// FluxReceive rejects multiple subscribers, but not after a cancel().
-					// Subsequent subscribers after cancel() will not be rejected, but will hang instead.
-					// So we need to intercept and reject them in that case.
-					this.rejectSubscribers.set(true)
-				)
+		return response.receive()
+				.doOnSubscribe(s ->
+						// WebClient's onStatus handling tries to drain the body, which may
+						// have also been done by application code in the onStatus callback.
+						// That relies on the 2nd subscriber being rejected but FluxReceive
+						// isn't consistent in doing so and may hang without completion.
+						Assert.state(this.bodyConsumed.compareAndSet(false, true),
+								"The client response body can only be consumed once."))
 				.map(byteBuf -> {
-					byteBuf.retain();
-					return this.bufferFactory.wrap(byteBuf);
+					// 5.0.x only: do not retain, make a copy..
+					byte[] data = new byte[byteBuf.readableBytes()];
+					byteBuf.readBytes(data);
+					return ReactorClientHttpConnector.BUFFER_FACTORY.wrap(data);
 				});
 	}
 

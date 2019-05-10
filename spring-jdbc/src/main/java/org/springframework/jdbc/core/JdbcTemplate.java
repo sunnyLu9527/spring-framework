@@ -398,9 +398,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 			logger.debug("Executing SQL statement [" + sql + "]");
 		}
 
-		/**
-		 * Callback to execute the statement.
-		 */
 		class ExecuteStatementCallback implements StatementCallback<Object>, SqlProvider {
 			@Override
 			@Nullable
@@ -426,9 +423,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 			logger.debug("Executing SQL query [" + sql + "]");
 		}
 
-		/**
-		 * Callback to execute the query.
-		 */
 		class QueryStatementCallback implements StatementCallback<T>, SqlProvider {
 			@Override
 			@Nullable
@@ -501,15 +495,12 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 			logger.debug("Executing SQL update [" + sql + "]");
 		}
 
-		/**
-		 * Callback to execute the update statement.
-		 */
 		class UpdateStatementCallback implements StatementCallback<Integer>, SqlProvider {
 			@Override
 			public Integer doInStatement(Statement stmt) throws SQLException {
 				int rows = stmt.executeUpdate(sql);
-				if (logger.isTraceEnabled()) {
-					logger.trace("SQL update affected " + rows + " rows");
+				if (logger.isDebugEnabled()) {
+					logger.debug("SQL update affected " + rows + " rows");
 				}
 				return rows;
 			}
@@ -529,9 +520,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 			logger.debug("Executing SQL batch update of " + sql.length + " statements");
 		}
 
-		/**
-		 * Callback to execute the batch update.
-		 */
 		class BatchUpdateStatementCallback implements StatementCallback<int[]>, SqlProvider {
 
 			@Nullable
@@ -864,8 +852,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 					pss.setValues(ps);
 				}
 				int rows = ps.executeUpdate();
-				if (logger.isTraceEnabled()) {
-					logger.trace("SQL update affected " + rows + " rows");
+				if (logger.isDebugEnabled()) {
+					logger.debug("SQL update affected " + rows + " rows");
 				}
 				return rows;
 			}
@@ -904,8 +892,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 					JdbcUtils.closeResultSet(keys);
 				}
 			}
-			if (logger.isTraceEnabled()) {
-				logger.trace("SQL update affected " + rows + " rows and returned " + generatedKeys.size() + " keys");
+			if (logger.isDebugEnabled()) {
+				logger.debug("SQL update affected " + rows + " rows and returned " + generatedKeys.size() + " keys");
 			}
 			return rows;
 		}));
@@ -981,41 +969,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 	}
 
 	@Override
-	public int[] batchUpdate(String sql, List<Object[]> batchArgs, final int[] argTypes) throws DataAccessException {
-		if (batchArgs.isEmpty()) {
-			return new int[0];
-		}
-
-		return batchUpdate(
-				sql,
-				new BatchPreparedStatementSetter() {
-					@Override
-					public void setValues(PreparedStatement ps, int i) throws SQLException {
-						Object[] values = batchArgs.get(i);
-						int colIndex = 0;
-						for (Object value : values) {
-							colIndex++;
-							if (value instanceof SqlParameterValue) {
-								SqlParameterValue paramValue = (SqlParameterValue) value;
-								StatementCreatorUtils.setParameterValue(ps, colIndex, paramValue, paramValue.getValue());
-							}
-							else {
-								int colType;
-								if (argTypes.length < colIndex) {
-									colType = SqlTypeValue.TYPE_UNKNOWN;
-								}
-								else {
-									colType = argTypes[colIndex - 1];
-								}
-								StatementCreatorUtils.setParameterValue(ps, colIndex, colType, value);
-							}
-						}
-					}
-					@Override
-					public int getBatchSize() {
-						return batchArgs.size();
-					}
-				});
+	public int[] batchUpdate(String sql, List<Object[]> batchArgs, int[] argTypes) throws DataAccessException {
+		return BatchUpdateUtils.executeBatchUpdate(sql, batchArgs, argTypes, this);
 	}
 
 	@Override
@@ -1036,10 +991,10 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 					if (batchSupported) {
 						ps.addBatch();
 						if (n % batchSize == 0 || n == batchArgs.size()) {
-							if (logger.isTraceEnabled()) {
+							if (logger.isDebugEnabled()) {
 								int batchIdx = (n % batchSize == 0) ? n / batchSize : (n / batchSize) + 1;
 								int items = n - ((n % batchSize == 0) ? n / batchSize - 1 : (n / batchSize)) * batchSize;
-								logger.trace("Sending SQL batch update #" + batchIdx + " with " + items + " items");
+								logger.debug("Sending SQL batch update #" + batchIdx + " with " + items + " items");
 							}
 							rowsAffected.add(ps.executeBatch());
 						}
@@ -1146,9 +1101,9 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		Map<String, Object> result = execute(csc, cs -> {
 			boolean retVal = cs.execute();
 			int updateCount = cs.getUpdateCount();
-			if (logger.isTraceEnabled()) {
-				logger.trace("CallableStatement.execute() returned '" + retVal + "'");
-				logger.trace("CallableStatement.getUpdateCount() returned " + updateCount);
+			if (logger.isDebugEnabled()) {
+				logger.debug("CallableStatement.execute() returned '" + retVal + "'");
+				logger.debug("CallableStatement.getUpdateCount() returned " + updateCount);
 			}
 			Map<String, Object> resultsMap = createResultsMap();
 			if (retVal || updateCount != -1) {
@@ -1189,8 +1144,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 						if (!this.skipUndeclaredResults) {
 							String rsName = RETURN_RESULT_SET_PREFIX + (rsIndex + 1);
 							SqlReturnResultSet undeclaredRsParam = new SqlReturnResultSet(rsName, getColumnMapRowMapper());
-							if (logger.isTraceEnabled()) {
-								logger.trace("Added default SqlReturnResultSet parameter named '" + rsName + "'");
+							if (logger.isDebugEnabled()) {
+								logger.debug("Added default SqlReturnResultSet parameter named '" + rsName + "'");
 							}
 							results.putAll(processResultSet(cs.getResultSet(), undeclaredRsParam));
 							rsIndex++;
@@ -1207,8 +1162,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 					else {
 						if (!this.skipUndeclaredResults) {
 							String undeclaredName = RETURN_UPDATE_COUNT_PREFIX + (updateIndex + 1);
-							if (logger.isTraceEnabled()) {
-								logger.trace("Added default SqlReturnUpdateCount parameter named '" + undeclaredName + "'");
+							if (logger.isDebugEnabled()) {
+								logger.debug("Added default SqlReturnUpdateCount parameter named '" + undeclaredName + "'");
 							}
 							results.put(undeclaredName, updateCount);
 							updateIndex++;
@@ -1217,8 +1172,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 				}
 				moreResults = cs.getMoreResults();
 				updateCount = cs.getUpdateCount();
-				if (logger.isTraceEnabled()) {
-					logger.trace("CallableStatement.getUpdateCount() returned " + updateCount);
+				if (logger.isDebugEnabled()) {
+					logger.debug("CallableStatement.getUpdateCount() returned " + updateCount);
 				}
 			}
 			while (moreResults || updateCount != -1);
@@ -1256,8 +1211,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 							String rsName = outParam.getName();
 							SqlReturnResultSet rsParam = new SqlReturnResultSet(rsName, getColumnMapRowMapper());
 							results.putAll(processResultSet((ResultSet) out, rsParam));
-							if (logger.isTraceEnabled()) {
-								logger.trace("Added default SqlReturnResultSet parameter named '" + rsName + "'");
+							if (logger.isDebugEnabled()) {
+								logger.debug("Added default SqlReturnResultSet parameter named '" + rsName + "'");
 							}
 						}
 					}

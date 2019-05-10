@@ -106,7 +106,7 @@ class ReactiveTypeHandler {
 	 * Whether the type can be adapted to a Reactive Streams {@link Publisher}.
 	 */
 	public boolean isReactiveType(Class<?> type) {
-		return (this.adapterRegistry.getAdapter(type) != null);
+		return (this.adapterRegistry.hasAdapters() && this.adapterRegistry.getAdapter(type) != null);
 	}
 
 
@@ -125,7 +125,7 @@ class ReactiveTypeHandler {
 		Assert.state(adapter != null, () -> "Unexpected return value: " + returnValue);
 
 		ResolvableType elementType = ResolvableType.forMethodParameter(returnType).getGeneric();
-		Class<?> elementClass = elementType.toClass();
+		Class<?> elementClass = elementType.resolve(Object.class);
 
 		Collection<MediaType> mediaTypes = getMediaTypes(request);
 		Optional<MediaType> mediaType = mediaTypes.stream().filter(MimeType::isConcrete).findFirst();
@@ -239,9 +239,12 @@ class ReactiveTypeHandler {
 		@Override
 		public final void onSubscribe(Subscription subscription) {
 			this.subscription = subscription;
+			if (logger.isDebugEnabled()) {
+				logger.debug("Subscribed to Publisher for " + this.emitter);
+			}
 			this.emitter.onTimeout(() -> {
-				if (logger.isTraceEnabled()) {
-					logger.trace("Connection timeout for " + this.emitter);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Connection timed out for " + this.emitter);
 				}
 				terminate();
 				this.emitter.complete();
@@ -309,8 +312,8 @@ class ReactiveTypeHandler {
 					this.subscription.request(1);
 				}
 				catch (final Throwable ex) {
-					if (logger.isTraceEnabled()) {
-						logger.trace("Send for " + this.emitter + " failed: " + ex);
+					if (logger.isDebugEnabled()) {
+						logger.debug("Send error for " + this.emitter, ex);
 					}
 					terminate();
 					return;
@@ -322,14 +325,14 @@ class ReactiveTypeHandler {
 				Throwable ex = this.error;
 				this.error = null;
 				if (ex != null) {
-					if (logger.isTraceEnabled()) {
-						logger.trace("Publisher for " + this.emitter + " failed: " + ex);
+					if (logger.isDebugEnabled()) {
+						logger.debug("Publisher error for " + this.emitter, ex);
 					}
 					this.emitter.completeWithError(ex);
 				}
 				else {
-					if (logger.isTraceEnabled()) {
-						logger.trace("Publisher for " + this.emitter + " completed");
+					if (logger.isDebugEnabled()) {
+						logger.debug("Publishing completed for " + this.emitter);
 					}
 					this.emitter.complete();
 				}

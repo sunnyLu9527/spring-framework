@@ -131,7 +131,7 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 			(publicId, systemId) -> new InputSource(new StringReader(""));
 
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	@Nullable
@@ -518,8 +518,8 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 	}
 
 	private JAXBContext createJaxbContextFromContextPath(String contextPath) throws JAXBException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Creating JAXBContext with context path [" + this.contextPath + "]");
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating JAXBContext with context path [" + this.contextPath + "]");
 		}
 		if (this.jaxbContextProperties != null) {
 			if (this.beanClassLoader != null) {
@@ -542,8 +542,8 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 	}
 
 	private JAXBContext createJaxbContextFromClasses(Class<?>... classesToBeBound) throws JAXBException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Creating JAXBContext with classes to be bound [" +
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating JAXBContext with classes to be bound [" +
 					StringUtils.arrayToCommaDelimitedString(classesToBeBound) + "]");
 		}
 		if (this.jaxbContextProperties != null) {
@@ -555,8 +555,8 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 	}
 
 	private JAXBContext createJaxbContextFromPackages(String... packagesToScan) throws JAXBException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Creating JAXBContext by scanning packages [" +
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating JAXBContext by scanning packages [" +
 					StringUtils.arrayToCommaDelimitedString(packagesToScan) + "]");
 		}
 		ClassPathJaxb2TypeScanner scanner = new ClassPathJaxb2TypeScanner(this.beanClassLoader, packagesToScan);
@@ -716,11 +716,8 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 	/**
 	 * Return a newly created JAXB marshaller.
 	 * <p>Note: JAXB marshallers are not necessarily thread-safe.
-	 * This method is public as of 5.2.
-	 * @since 5.2
-	 * @see #createUnmarshaller()
 	 */
-	public Marshaller createMarshaller() {
+	protected Marshaller createMarshaller() {
 		try {
 			Marshaller marshaller = getJaxbContext().createMarshaller();
 			initJaxbMarshaller(marshaller);
@@ -821,11 +818,8 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 	/**
 	 * Return a newly created JAXB unmarshaller.
 	 * <p>Note: JAXB unmarshallers are not necessarily thread-safe.
-	 * This method is public as of 5.2.
-	 * @since 5.2
-	 * @see #createMarshaller()
 	 */
-	public Unmarshaller createUnmarshaller() {
+	protected Unmarshaller createUnmarshaller() {
 		try {
 			Unmarshaller unmarshaller = getJaxbContext().createUnmarshaller();
 			initJaxbUnmarshaller(unmarshaller);
@@ -896,7 +890,7 @@ public class Jaxb2Marshaller implements MimeMarshaller, MimeUnmarshaller, Generi
 			return new SAXSource(xmlReader, inputSource);
 		}
 		catch (SAXException ex) {
-			logger.info("Processing of external entities could not be disabled", ex);
+			logger.warn("Processing of external entities could not be disabled", ex);
 			return source;
 		}
 	}

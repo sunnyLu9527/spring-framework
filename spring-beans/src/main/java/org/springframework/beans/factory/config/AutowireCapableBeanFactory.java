@@ -107,18 +107,6 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	@Deprecated
 	int AUTOWIRE_AUTODETECT = 4;
 
-	/**
-	 * Suffix for the "original instance" convention when initializing an existing
-	 * bean instance: to be appended to the fully-qualified bean class name,
-	 * e.g. "com.mypackage.MyClass.ORIGINAL", in order to enforce the given instance
-	 * to be returned, i.e. no proxies etc.
-	 * @since 5.1
-	 * @see #initializeBean(Object, String)
-	 * @see #applyBeanPostProcessorsBeforeInitialization(Object, String)
-	 * @see #applyBeanPostProcessorsAfterInitialization(Object, String)
-	 */
-	String ORIGINAL_INSTANCE_SUFFIX = ".ORIGINAL";
-
 
 	//-------------------------------------------------------------------------
 	// Typical methods for creating and populating external bean instances
@@ -276,12 +264,9 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * for callbacks but not checked against the registered bean definitions.
 	 * @param existingBean the existing bean instance
 	 * @param beanName the name of the bean, to be passed to it if necessary
-	 * (only passed to {@link BeanPostProcessor BeanPostProcessors};
-	 * can follow the {@link #ORIGINAL_INSTANCE_SUFFIX} convention in order to
-	 * enforce the given instance to be returned, i.e. no proxies etc)
+	 * (only passed to {@link BeanPostProcessor BeanPostProcessors})
 	 * @return the bean instance to use, either the original or a wrapped one
 	 * @throws BeansException if the initialization failed
-	 * @see #ORIGINAL_INSTANCE_SUFFIX
 	 */
 	Object initializeBean(Object existingBean, String beanName) throws BeansException;
 
@@ -291,13 +276,10 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * The returned bean instance may be a wrapper around the original.
 	 * @param existingBean the existing bean instance
 	 * @param beanName the name of the bean, to be passed to it if necessary
-	 * (only passed to {@link BeanPostProcessor BeanPostProcessors};
-	 * can follow the {@link #ORIGINAL_INSTANCE_SUFFIX} convention in order to
-	 * enforce the given instance to be returned, i.e. no proxies etc)
+	 * (only passed to {@link BeanPostProcessor BeanPostProcessors})
 	 * @return the bean instance to use, either the original or a wrapped one
 	 * @throws BeansException if any post-processing failed
 	 * @see BeanPostProcessor#postProcessBeforeInitialization
-	 * @see #ORIGINAL_INSTANCE_SUFFIX
 	 */
 	Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName)
 			throws BeansException;
@@ -308,13 +290,10 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * The returned bean instance may be a wrapper around the original.
 	 * @param existingBean the existing bean instance
 	 * @param beanName the name of the bean, to be passed to it if necessary
-	 * (only passed to {@link BeanPostProcessor BeanPostProcessors};
-	 * can follow the {@link #ORIGINAL_INSTANCE_SUFFIX} convention in order to
-	 * enforce the given instance to be returned, i.e. no proxies etc)
+	 * (only passed to {@link BeanPostProcessor BeanPostProcessors})
 	 * @return the bean instance to use, either the original or a wrapped one
 	 * @throws BeansException if any post-processing failed
 	 * @see BeanPostProcessor#postProcessAfterInitialization
-	 * @see #ORIGINAL_INSTANCE_SUFFIX
 	 */
 	Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
 			throws BeansException;
@@ -348,22 +327,6 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * @see #getBean(Class)
 	 */
 	<T> NamedBeanHolder<T> resolveNamedBean(Class<T> requiredType) throws BeansException;
-
-	/**
-	 * Resolve a bean instance for the given bean name, providing a dependency descriptor
-	 * for exposure to target factory methods.
-	 * <p>This is effectively a variant of {@link #getBean(String, Class)} which supports
-	 * factory methods with an {@link org.springframework.beans.factory.InjectionPoint}
-	 * argument.
-	 * @param name the name of the bean to look up
-	 * @param descriptor the dependency descriptor for the requesting injection point
-	 * @return the corresponding bean instance
-	 * @throws NoSuchBeanDefinitionException if there is no bean with the specified name
-	 * @throws BeansException if the bean could not be created
-	 * @since 5.1.5
-	 * @see #getBean(String, Class)
-	 */
-	Object resolveBeanByName(String name, DependencyDescriptor descriptor) throws BeansException;
 
 	/**
 	 * Resolve the specified dependency against the beans defined in this factory.

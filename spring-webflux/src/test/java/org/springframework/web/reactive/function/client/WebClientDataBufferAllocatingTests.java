@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.springframework.web.reactive.function.client;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.function.Function;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -29,21 +28,16 @@ import org.junit.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.buffer.AbstractDataBufferAllocatingTestCase;
 import org.springframework.core.io.buffer.NettyDataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.http.client.reactive.ReactorResourceFactory;
-import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 
 /**
  * WebClient integration tests focusing on data buffer management.
- *
  * @author Rossen Stoyanchev
  */
 public class WebClientDataBufferAllocatingTests extends AbstractDataBufferAllocatingTestCase {
@@ -55,15 +49,9 @@ public class WebClientDataBufferAllocatingTests extends AbstractDataBufferAlloca
 
 	private WebClient webClient;
 
-	private ReactorResourceFactory factory;
-
 
 	@Before
 	public void setUp() {
-
-		this.factory = new ReactorResourceFactory();
-		this.factory.afterPropertiesSet();
-
 		this.server = new MockWebServer();
 		this.webClient = WebClient
 				.builder()
@@ -75,8 +63,7 @@ public class WebClientDataBufferAllocatingTests extends AbstractDataBufferAlloca
 	private ReactorClientHttpConnector initConnector() {
 		if (bufferFactory instanceof NettyDataBufferFactory) {
 			ByteBufAllocator allocator = ((NettyDataBufferFactory) bufferFactory).getByteBufAllocator();
-			return new ReactorClientHttpConnector(this.factory, httpClient ->
-					httpClient.tcpConfiguration(tcpClient -> tcpClient.option(ChannelOption.ALLOCATOR, allocator)));
+			return new ReactorClientHttpConnector(builder -> builder.option(ChannelOption.ALLOCATOR, allocator));
 		}
 		else {
 			return new ReactorClientHttpConnector();
@@ -86,9 +73,7 @@ public class WebClientDataBufferAllocatingTests extends AbstractDataBufferAlloca
 	@After
 	public void shutDown() throws InterruptedException {
 		waitForDataBufferRelease(Duration.ofSeconds(2));
-		this.factory.destroy();
 	}
-
 
 
 	@Test
@@ -108,21 +93,6 @@ public class WebClientDataBufferAllocatingTests extends AbstractDataBufferAlloca
 		assertEquals(1, this.server.getRequestCount());
 	}
 
-	@Test // SPR-17482
-	public void bodyToMonoVoidWithoutContentType() {
-
-		this.server.enqueue(new MockResponse()
-				.setResponseCode(HttpStatus.ACCEPTED.value())
-				.setChunkedBody("{\"foo\" : \"123\",  \"baz\" : \"456\", \"baz\" : \"456\"}", 5));
-
-		Mono<Map<String, String>> mono = this.webClient.get()
-				.uri("/sample").accept(MediaType.APPLICATION_JSON)
-				.retrieve()
-				.bodyToMono(new ParameterizedTypeReference<Map<String, String>>() {});
-
-		StepVerifier.create(mono).expectError(UnsupportedMediaTypeException.class).verify(Duration.ofSeconds(3));
-		assertEquals(1, this.server.getRequestCount());
-	}
 
 	@Test
 	public void onStatusWithBodyNotConsumed() {
