@@ -1,0 +1,12 @@
+description = "Spring TestContext Frameworks"
+
+dependencyManagement {
+	imports {
+		mavenBom "io.projectreactor:reactor-bom:${reactorVersion}"
+		mavenBom "io.netty:netty-bom:${nettyVersion}"
+	}
+}
+
+dependencies {
+	optional(project(":spring-context"))
+}
