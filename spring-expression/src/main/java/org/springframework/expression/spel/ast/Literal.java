@@ -37,7 +37,7 @@ public abstract class Literal extends SpelNodeImpl {
 
 
 	public Literal(@Nullable String originalValue, int startPos, int endPos) {
-		super(startPos, endPos);
+		super(startPos);
 		this.originalValue = originalValue;
 	}
 

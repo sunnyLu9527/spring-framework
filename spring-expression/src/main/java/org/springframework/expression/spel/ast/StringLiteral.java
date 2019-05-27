@@ -33,7 +33,7 @@ public class StringLiteral extends Literal {
 
 
 	public StringLiteral(String payload, int pos, String value) {
-		super(payload, pos);
+		super(payload, pos,pos);
 		value = value.substring(1, value.length() - 1);
 		this.value = new TypedValue(value.replaceAll("''", "'").replaceAll("\"\"", "\""));
 		this.exitTypeDescriptor = "Ljava/lang/String";

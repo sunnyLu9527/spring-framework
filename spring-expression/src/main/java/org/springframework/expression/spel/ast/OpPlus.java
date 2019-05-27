@@ -51,7 +51,7 @@ import org.springframework.util.NumberUtils;
 public class OpPlus extends Operator {
 
 	public OpPlus(int pos, SpelNodeImpl... operands) {
-		super("+", pos, operands);
+		super("+", pos,pos, operands);
 		Assert.notEmpty(operands, "Operands must not be empty");
 	}
 

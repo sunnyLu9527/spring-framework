@@ -78,11 +78,6 @@ public class MutablePropertySources implements PropertySources {
 	}
 
 	@Override
-	public Iterator<PropertySource<?>> iterator() {
-		return this.propertySourceList.iterator();
-	}
-
-	@Override
 	public boolean contains(String name) {
 		return this.propertySourceList.contains(PropertySource.named(name));
 	}

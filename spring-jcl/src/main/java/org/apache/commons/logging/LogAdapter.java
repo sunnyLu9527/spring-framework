@@ -78,8 +78,8 @@ final class LogAdapter {
 	private LogAdapter() {
 	}
 
-
 	/**
+	 * 依次load LOG4J SLF4J_LAL SLF4J load不到则使用默认的jul作为日志
 	 * Create an actual {@link Log} instance for the selected API.
 	 * @param name the logger name
 	 */

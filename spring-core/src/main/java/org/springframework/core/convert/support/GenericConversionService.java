@@ -117,7 +117,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 					"ConverterFactory [" + factory.getClass().getName() + "]; does the class parameterize those types?");
 		}
 		addConverter(new ConverterFactoryAdapter(factory,
-				new ConvertiblePair(typeInfo[0].toClass(), typeInfo[1].toClass())));
+				new ConvertiblePair(typeInfo[0].getClass(), typeInfo[1].getClass())));
 	}
 
 	@Override
@@ -351,7 +351,7 @@ public class GenericConversionService implements ConfigurableConversionService {
 
 		public ConverterAdapter(Converter<?, ?> converter, ResolvableType sourceType, ResolvableType targetType) {
 			this.converter = (Converter<Object, Object>) converter;
-			this.typeInfo = new ConvertiblePair(sourceType.toClass(), targetType.toClass());
+			this.typeInfo = new ConvertiblePair(sourceType.getClass(), targetType.getClass());
 			this.targetType = targetType;
 		}
 
