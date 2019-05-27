@@ -99,6 +99,10 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 		return bean;
 	}
 
+	/**
+	 * 只要实现特定的接口，spring会帮你注入一些对象
+	 * @param bean
+	 */
 	private void invokeAwareInterfaces(Object bean) {
 		if (bean instanceof Aware) {
 			if (bean instanceof EnvironmentAware) {
@@ -107,13 +111,13 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 			if (bean instanceof EmbeddedValueResolverAware) {
 				((EmbeddedValueResolverAware) bean).setEmbeddedValueResolver(this.embeddedValueResolver);
 			}
-			if (bean instanceof ResourceLoaderAware) {
+			if (bean instanceof ResourceLoaderAware) {//由此可见这里的ResourceLoader可以强转为ApplicationContext
 				((ResourceLoaderAware) bean).setResourceLoader(this.applicationContext);
 			}
-			if (bean instanceof ApplicationEventPublisherAware) {
+			if (bean instanceof ApplicationEventPublisherAware) {//由此可见这里的ApplicationEventPublisher可以强转为ApplicationContext
 				((ApplicationEventPublisherAware) bean).setApplicationEventPublisher(this.applicationContext);
 			}
-			if (bean instanceof MessageSourceAware) {
+			if (bean instanceof MessageSourceAware) {//由此可见这里的MessageSource可以强转为ApplicationContext
 				((MessageSourceAware) bean).setMessageSource(this.applicationContext);
 			}
 			if (bean instanceof ApplicationContextAware) {

@@ -66,6 +66,9 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * spring的后置处理器,这里主要处理对@Autowired注解的注入逻辑
+ * @see #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)
+ *
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
  * that autowires annotated fields, setter methods and arbitrary config methods.
  * Such members to be injected are detected through a Java 5 annotation: by default,
@@ -270,7 +273,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				if (candidateConstructors == null) {
 					Constructor<?>[] rawCandidates;
 					try {
-						rawCandidates = beanClass.getDeclaredConstructors();
+						rawCandidates = beanClass.getDeclaredConstructors();//获取所有定义的构造方法
 					}
 					catch (Throwable ex) {
 						throw new BeanCreationException(beanName,
@@ -289,7 +292,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						else if (primaryConstructor != null) {
 							continue;
 						}
-						AnnotationAttributes ann = findAutowiredAnnotation(candidate);
+						AnnotationAttributes ann = findAutowiredAnnotation(candidate);//获取构造方法上的注解@Autowired/@Value
 						if (ann == null) {
 							Class<?> userClass = ClassUtils.getUserClass(beanClass);
 							if (userClass != beanClass) {
@@ -303,15 +306,15 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 								}
 							}
 						}
-						if (ann != null) {
-							if (requiredConstructor != null) {
+						if (ann != null) {//如果标注了@Autowired/@Value
+							if (requiredConstructor != null) {//requiredConstructor不为空说明已经有一个required的构造方法,这里不允许存在两个required的构造方法
 								throw new BeanCreationException(beanName,
 										"Invalid autowire-marked constructor: " + candidate +
 										". Found constructor with 'required' Autowired annotation already: " +
 										requiredConstructor);
 							}
 							boolean required = determineRequiredStatus(ann);
-							if (required) {
+							if (required) {//注解上的required是true的话，将该构造方法赋给requiredConstructor
 								if (!candidates.isEmpty()) {
 									throw new BeanCreationException(beanName,
 											"Invalid autowire-marked constructors: " + candidates +
@@ -323,7 +326,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 							candidates.add(candidate);
 						}
 						else if (candidate.getParameterCount() == 0) {
-							defaultConstructor = candidate;
+							defaultConstructor = candidate;//设一个默认的构造方法
 						}
 					}
 					if (!candidates.isEmpty()) {
@@ -339,9 +342,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 										"default constructor to fall back to: " + candidates.get(0));
 							}
 						}
-						candidateConstructors = candidates.toArray(new Constructor<?>[0]);
+						candidateConstructors = candidates.toArray(new Constructor<?>[0]);//有注解的构造方法的时候，取有注解的构造方法
 					}
-					else if (rawCandidates.length == 1 && rawCandidates[0].getParameterCount() > 0) {
+					else if (rawCandidates.length == 1 && rawCandidates[0].getParameterCount() > 0) {//没有注解的构造方法的时候，取一个带参数的构造方法
 						candidateConstructors = new Constructor<?>[] {rawCandidates[0]};
 					}
 					else if (nonSyntheticConstructors == 2 && primaryConstructor != null &&
@@ -361,10 +364,21 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		return (candidateConstructors.length > 0 ? candidateConstructors : null);
 	}
 
+	/**
+	 * 这里赋值的核心逻辑在DefaultListableBeanFactory当中
+	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#resolveDependency(DependencyDescriptor, String, Set, TypeConverter)
+	 * @param pvs
+	 * @param pds
+	 * @param bean
+	 * @param beanName
+	 * @return
+	 * @throws BeanCreationException
+	 */
 	@Override
 	public PropertyValues postProcessPropertyValues(
 			PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeanCreationException {
 
+		//获取到须要注入的属性
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
 			metadata.inject(bean, beanName, pvs);
@@ -399,7 +413,17 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		}
 	}
 
-
+	/**
+	 * 找到须要特别注入的属性
+	 * 第一次 执行后置处理器MergedBeanDefinitionPostProcessor 找出注解的对象信息并缓存起来
+	 * @see #postProcessMergedBeanDefinition(RootBeanDefinition, Class, String)
+	 * 第二次 执行后置处理器InstantiationAwareBeanPostProcessor 得到缓存的对象信息，进行注入
+	 * @see #postProcessPropertyValues(PropertyValues, PropertyDescriptor[], Object, String)
+	 * @param beanName
+	 * @param clazz
+	 * @param pvs
+	 * @return
+	 */
 	private InjectionMetadata findAutowiringMetadata(String beanName, Class<?> clazz, @Nullable PropertyValues pvs) {
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());

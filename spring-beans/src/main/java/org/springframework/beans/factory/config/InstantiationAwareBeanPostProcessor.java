@@ -47,6 +47,13 @@ import org.springframework.lang.Nullable;
 public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 
 	/**
+	 * 在目标对象实例化之前调用，方法的返回值将代替原本该生成的目标对象的实例
+	 * 后续将只会调用所有BeanPostProcessor的postProcessAfterInitialization方法处理该实例
+	 * 其他方法不再调用
+	 * 典型应用场景:
+	 * @see EnableAspectJAutoProxy 会启用下面这个InstantiationAwareBeanPostProcessor
+	 * @see AnnotationAwareAspectJAutoProxyCreator
+	 * 上面这个后置处理器会在启用spring aop代理增强时，将不须要增强的切面类放到一个map中，后续aop对那些bean做增强的时候，这些map中存在的bean会被忽略，即不被增强
 	 * Apply this BeanPostProcessor <i>before the target bean gets instantiated</i>.
 	 * The returned bean object may be a proxy to use instead of the target bean,
 	 * effectively suppressing default instantiation of the target bean.
@@ -76,6 +83,7 @@ public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 	}
 
 	/**
+	 * 这个时候bean已经实例化，该方法确定是否须要注入属性，false表示忽略属性的注入
 	 * Perform operations after the bean has been instantiated, via a constructor or factory method,
 	 * but before Spring property population (from explicit properties or autowiring) occurs.
 	 * <p>This is the ideal callback for performing custom field injection on the given bean

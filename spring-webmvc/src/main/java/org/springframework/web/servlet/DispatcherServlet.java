@@ -283,6 +283,11 @@ public class DispatcherServlet extends FrameworkServlet {
 		// Load default strategy implementations from properties file.
 		// This is currently strictly internal and not meant to be customized
 		// by application developers.
+		/**
+		 * 从属性文件加载默认策略实现
+		 * 说白了就是从DispatcherServlet.properties这个配置文件中拿出所有的配置
+		 * 这里就包含了spring内置的HandlerMapping;HandlerAdapter;ViewResolver等等
+		 */
 		try {
 			ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, DispatcherServlet.class);
 			defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
@@ -487,26 +492,31 @@ public class DispatcherServlet extends FrameworkServlet {
 
 
 	/**
+	 * 初始化各种bean 源自
+	 * @see FrameworkServlet#initServletBean()
 	 * This implementation calls {@link #initStrategies}.
 	 */
 	@Override
 	protected void onRefresh(ApplicationContext context) {
+		//顾名思义初始化Strategie
 		initStrategies(context);
 	}
 
 	/**
+	 * 各种初始化操作源自
+	 * @see #onRefresh(ApplicationContext)
 	 * Initialize the strategy objects that this servlet uses.
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
-		initMultipartResolver(context);
+		initMultipartResolver(context);//上传文件的bean,从这里也可以看出spring为什么规定上传文件的bean名字必须是multipartResolver
 		initLocaleResolver(context);
 		initThemeResolver(context);
-		initHandlerMappings(context);
-		initHandlerAdapters(context);
+		initHandlerMappings(context);//初始化HandlerMapping
+		initHandlerAdapters(context);//初始化HandlerAdapters
 		initHandlerExceptionResolvers(context);
 		initRequestToViewNameTranslator(context);
-		initViewResolvers(context);
+		initViewResolvers(context);//初始化ViewResolver
 		initFlashMapManager(context);
 	}
 
@@ -517,6 +527,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	private void initMultipartResolver(ApplicationContext context) {
 		try {
+			//通过名称获取上下文中的multipartResolver，这里的名称就是固定的
 			this.multipartResolver = context.getBean(MULTIPART_RESOLVER_BEAN_NAME, MultipartResolver.class);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Detected " + this.multipartResolver);
@@ -592,6 +603,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	private void initHandlerMappings(ApplicationContext context) {
 		this.handlerMappings = null;
 
+		//检测是否beanFactory中有配handlerMappings，有的化从beanFactory中取，否则从properties中取
 		if (this.detectAllHandlerMappings) {
 			// Find all HandlerMappings in the ApplicationContext, including ancestor contexts.
 			Map<String, HandlerMapping> matchingBeans =
@@ -614,6 +626,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Ensure we have at least one HandlerMapping, by registering
 		// a default HandlerMapping if no other mappings are found.
+		//beanFactory中不存在就通过配置文件中的信息得到handlerMapping
 		if (this.handlerMappings == null) {
 			this.handlerMappings = getDefaultStrategies(context, HandlerMapping.class);
 			if (logger.isTraceEnabled()) {
@@ -902,6 +915,8 @@ public class DispatcherServlet extends FrameworkServlet {
 
 
 	/**
+	 * spring mvc请求流程源自
+	 * @see FrameworkServlet#processRequest(HttpServletRequest, HttpServletResponse)
 	 * Exposes the DispatcherServlet-specific request attributes and delegates to {@link #doDispatch}
 	 * for the actual dispatching.
 	 */
@@ -939,6 +954,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		try {
+			//核心方法
 			doDispatch(request, response);
 		}
 		finally {
@@ -986,6 +1002,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	}
 
 	/**
+	 * spring mvc请求流程源自
+	 * @see #doService(HttpServletRequest, HttpServletResponse)
 	 * Process the actual dispatching to the handler.
 	 * <p>The handler will be obtained by applying the servlet's HandlerMappings in order.
 	 * The HandlerAdapter will be obtained by querying the servlet's installed HandlerAdapters
@@ -1008,10 +1026,13 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//检查请求中是否有上传文件操作
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				//确定当前请求的处理程序
+				//推断controller的类型
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
@@ -1019,6 +1040,15 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Determine handler adapter for the current request.
+				/**
+				 * 如果HandlerExecutionChain是一个bean，这里的getHandler返回的是一个bean
+				 * @see org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping
+				 *
+				 * 如果HandlerExecutionChain是一个method，这里的getHandler返回的是一个method
+				 * @see org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
+				 *
+				 * 这里获取到HandlerAdapter使用的是适配器模式
+				 */
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
@@ -1026,15 +1056,20 @@ public class DispatcherServlet extends FrameworkServlet {
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
 					long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
+					if (logger.isDebugEnabled()) {
+						logger.debug("Last-Modified value for [" + getRequestUri(request) + "] is: " + lastModified);
+					}
 					if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
 						return;
 					}
 				}
 
+				//前置拦截器处理
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
+				//相当于反射调用
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
@@ -1229,6 +1264,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
 		if (this.handlerMappings != null) {
 			for (HandlerMapping mapping : this.handlerMappings) {
+				//遍历HandlerMapping，将请求传过去看能否得到一个handler
 				HandlerExecutionChain handler = mapping.getHandler(request);
 				if (handler != null) {
 					return handler;

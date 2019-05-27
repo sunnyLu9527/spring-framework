@@ -249,6 +249,14 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			/**
+			 * 符合以下条件的时候将被定义为不须要增强，放到一个map中，后续aop对那些bean做增强的时候，这些map中存在的bean会被忽略，即不被增强
+			 * 主要是以下接口的实现类不会被增强，因为下面这些都是aop的相关配置类，不须要被增强
+			 * @see Pointcut
+			 * @see org.aopalliance.aop.Advice
+			 * @see org.springframework.aop.Advisor
+			 * @see org.springframework.aop.framework.AopInfrastructureBean
+			 */
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -347,6 +355,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 
 		// Create proxy if we have advice.
+		// 获取到所有的切面，就是标注了@Aspect的切面
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
@@ -450,11 +459,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		proxyFactory.copyFrom(this);
 
 		if (!proxyFactory.isProxyTargetClass()) {
-			if (shouldProxyTargetClass(beanClass, beanName)) {
+			if (shouldProxyTargetClass(beanClass, beanName)) {//是否须要cglib代理
 				proxyFactory.setProxyTargetClass(true);
 			}
 			else {
-				evaluateProxyInterfaces(beanClass, proxyFactory);
+				evaluateProxyInterfaces(beanClass, proxyFactory);//jdk动态代理
 			}
 		}
 

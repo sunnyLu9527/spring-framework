@@ -23,6 +23,8 @@ import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
 /**
+ * 重写一下两个方法，可以同时对多个事件感兴趣
+ * 可以看下spring boot中的LoggingApplicationListener实现
  * Extended variant of the standard {@link ApplicationListener} interface,
  * exposing further metadata such as the supported event and source type.
  *
@@ -37,12 +39,14 @@ import org.springframework.lang.Nullable;
 public interface GenericApplicationListener extends ApplicationListener<ApplicationEvent>, Ordered {
 
 	/**
+	 * 是否对指定事件的类型感兴趣，true才会执行该监听器
 	 * Determine whether this listener actually supports the given event type.
 	 * @param eventType the event type (never {@code null})
 	 */
 	boolean supportsEventType(ResolvableType eventType);
 
 	/**
+	 * 是否对指定的事件发生源感兴趣，true才会执行该监听器
 	 * Determine whether this listener actually supports the given source type.
 	 * @param sourceType the source type, or {@code null} if no source
 	 */

@@ -22,8 +22,13 @@ import java.util.List;
 import org.springframework.util.StringUtils;
 
 /**
+ *
+ * Request到Controller的映射
+ * request-bean  比如"/test"的请求会映射到加上@Component("/test")这个注解并且实现了Controller接口的bean
+ * 其底层存了一个key为request，value为bean的map
+ * @see AbstractUrlHandlerMapping#handlerMap
  * Implementation of the {@link org.springframework.web.servlet.HandlerMapping}
- * interface that maps from URLs to beans with names that start with a slash ("/"),
+ * interface that map from URLs to beans with names that start with a slash ("/"),
  * similar to how Struts maps URLs to action names.
  *
  * <p>This is the default implementation used by the

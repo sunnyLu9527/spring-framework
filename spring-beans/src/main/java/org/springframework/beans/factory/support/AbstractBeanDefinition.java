@@ -65,18 +65,24 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String SCOPE_DEFAULT = "";
 
 	/**
+	 * 这是spring默认的装配策略
+	 * 此种装配策略，spring不会自动去装配，须要手动添加@AutoWired注解，这也是我们最常用的方法
+	 * @see org.springframework.beans.factory.annotation.Autowired
 	 * Constant that indicates no autowiring at all.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_NO = AutowireCapableBeanFactory.AUTOWIRE_NO;
 
 	/**
+	 * 按bean的name去装配bean，不须要手动添加注解
 	 * Constant that indicates autowiring bean properties by name.
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_NAME = AutowireCapableBeanFactory.AUTOWIRE_BY_NAME;
 
 	/**
+	 * 按bean的类型去装配bean，同样不须要去手动添加注解,这里找的是有set方法的才会去装配，和属性无关
+	 * mybatis-spring中注入SqlSessionTemplate就是基于此原理的
 	 * Constant that indicates autowiring bean properties by type.
 	 * @see #setAutowireMode
 	 */
